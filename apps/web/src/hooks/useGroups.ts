@@ -7,6 +7,7 @@ export interface Grupo {
   nombre: string;
   orden: number;
   favoritos: number;
+  color: string | null;
 }
 
 const CLAVE = ["grupos"];
@@ -46,9 +47,9 @@ function useInvalidar() {
 export function useCrearGrupo() {
   const invalidar = useInvalidar();
   return useMutation({
-    mutationFn: (nombre: string) =>
+    mutationFn: (datos: { nombre: string; color?: string | null }) =>
       conSesion((token) =>
-        api<{ grupo: Grupo }>("/api/v1/groups", { method: "POST", body: { nombre }, token }),
+        api<{ grupo: Grupo }>("/api/v1/groups", { method: "POST", body: datos, token }),
       ),
     onSuccess: invalidar,
   });
@@ -57,9 +58,9 @@ export function useCrearGrupo() {
 export function useRenombrarGrupo() {
   const invalidar = useInvalidar();
   return useMutation({
-    mutationFn: ({ id, nombre }: { id: string; nombre: string }) =>
+    mutationFn: ({ id, nombre, color }: { id: string; nombre?: string; color?: string | null }) =>
       conSesion((token) =>
-        api(`/api/v1/groups/${id}`, { method: "PUT", body: { nombre }, token }),
+        api(`/api/v1/groups/${id}`, { method: "PUT", body: { nombre, color }, token }),
       ),
     onSuccess: invalidar,
   });

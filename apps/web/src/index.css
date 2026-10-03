@@ -28,6 +28,7 @@
   --font-sans: "Inter", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
 
   --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-soft: var(--soft);

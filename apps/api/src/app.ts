@@ -6,6 +6,7 @@ import type { AppConfig } from "./config/env.js";
 import { errorHandler, notFoundHandler } from "./errors.js";
 import { createAuthRouter } from "./routes/auth.js";
 import { createGroupsRouter } from "./routes/groups.js";
+import { createBookmarksRouter, createImagenesRouter } from "./routes/bookmarks.js";
 
 export function createApp(db: Db, config: AppConfig): Express {
   const app = express();
@@ -18,6 +19,8 @@ export function createApp(db: Db, config: AppConfig): Express {
   });
   app.use("/api/v1/auth", createAuthRouter({ db, config }));
   app.use("/api/v1/groups", createGroupsRouter({ db, config }));
+  app.use("/api/v1/bookmarks", createBookmarksRouter({ db, config }));
+  app.use("/api/v1/imagenes", createImagenesRouter({ db, config }));
 
   if (config.staticDir && existsSync(config.staticDir)) {
     const dir = config.staticDir;

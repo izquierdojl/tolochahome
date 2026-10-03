@@ -36,7 +36,7 @@ El sistema SHALL devolver solo los grupos del usuario autenticado, ordenados por
 
 ### Requirement: Renombrar y reordenar grupos
 
-El sistema SHALL permitir renombrar un grupo propio y cambiar su posición, reasignando el orden de los grupos afectados sin huecos ni duplicados.
+El sistema SHALL permitir renombrar un grupo propio y cambiar su posición, reasignando el orden de los grupos afectados sin huecos ni duplicados, tanto por arrastre como por botones.
 
 #### Scenario: Renombrar grupo propio
 
@@ -48,10 +48,29 @@ El sistema SHALL permitir renombrar un grupo propio y cambiar su posición, reas
 - **WHEN** un usuario mueve un grupo a otra posición
 - **THEN** el sistema reordena sus grupos de forma contigua y devuelve la lista ordenada
 
+#### Scenario: Reordenar grupos por arrastre
+
+- **WHEN** un usuario arrastra un grupo a otra posición
+- **THEN** la web muestra un indicador visual del destino y, al soltar, el sistema guarda el orden contiguo resultante
+
 #### Scenario: Grupo ajeno o inexistente
 
 - **WHEN** se opera sobre un grupo que no existe o es de otro usuario
 - **THEN** el sistema responde `404` sin revelar a quién pertenece
+
+### Requirement: Color de grupo
+
+Cada grupo SHALL poder tener un color hexadecimal propio (`#rrggbb`), visible como acento en su sección y editable junto al nombre; sin color usa el acento por defecto del tema.
+
+#### Scenario: Asignar color
+
+- **WHEN** se crea o renombra un grupo indicando un color válido
+- **THEN** el sistema lo guarda y lo devuelve en el grupo
+
+#### Scenario: Color inválido
+
+- **WHEN** se indica un color que no es `#rrggbb`
+- **THEN** el sistema responde `400`
 
 ### Requirement: Borrar grupos
 

@@ -98,6 +98,31 @@ async function crearGrupo(token: string, nombre: string): Promise<{ id: string; 
   return res.body.grupo;
 }
 
+describe("GET /api/v1/groups con favoritos", () => {  it("el conteo refleja los favoritos reales de cada grupo", async () => {
+    ctx = createTestApp();
+    const token = await registrarYToken("c@ejemplo.com");
+    const auth = { Authorization: `Bearer ${token}` };
+    const lleno = (await crearGrupo(token, "Lleno")).id;
+    await crearGrupo(token, "Vacío");
+    await request(ctx.app).post("/api/v1/bookmarks").set(auth).send({
+      groupId: lleno,
+      titulo: "Uno",
+      url: "https://uno.com",
+    });
+    await request(ctx.app).post("/api/v1/bookmarks").set(auth).send({
+      groupId: lleno,
+      titulo: "Dos",
+      url: "https://dos.com",
+    });
+
+    const res = await request(ctx.app).get("/api/v1/groups").set(auth);
+    expect(res.status).toBe(200);
+    const porNombre = new Map(res.body.grupos.map((g: { nombre: string; favoritos: number }) => [g.nombre, g.favoritos]));
+    expect(porNombre.get("Lleno")).toBe(2);
+    expect(porNombre.get("Vacío")).toBe(0);
+  });
+});
+
 describe("PUT /api/v1/groups/:id", () => {
   it("renombra un grupo propio", async () => {
     ctx = createTestApp();
@@ -170,5 +195,50 @@ describe("DELETE /api/v1/groups/:id", () => {
       .delete(`/api/v1/groups/${ajeno.id}`)
       .set("Authorization", `Bearer ${tokenA}`);
     expect(res.status).toBe(404);
+  });
+});
+
+describe("Color de grupo", () => {
+  it("crear con color válido lo guarda y lo devuelve", async () => {
+    ctx = createTestApp();
+    const token = await registrarYToken("col@ejemplo.com");
+    const res = await request(ctx.app)
+      .post("/api/v1/groups")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ nombre: "Color", color: "#3c6a4d" });
+    expect(res.status).toBe(201);
+    expect(res.body.grupo.color).toBe("#3c6a4d");
+
+    const lista = await request(ctx.app).get("/api/v1/groups").set("Authorization", `Bearer ${token}`);
+    expect(lista.body.grupos[0].color).toBe("#3c6a4d");
+  });
+
+  it("color inválido responde 400", async () => {
+    ctx = createTestApp();
+    const token = await registrarYToken("col@ejemplo.com");
+    const res = await request(ctx.app)
+      .post("/api/v1/groups")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ nombre: "Color", color: "rojo" });
+    expect(res.status).toBe(400);
+  });
+
+  it("renombrar puede cambiar y quitar el color", async () => {
+    ctx = createTestApp();
+    const token = await registrarYToken("col@ejemplo.com");
+    const grupo = await crearGrupo(token, "C");
+    const auth = { Authorization: `Bearer ${token}` };
+    const cambio = await request(ctx.app)
+      .put(`/api/v1/groups/${grupo.id}`)
+      .set(auth)
+      .send({ color: "#a67430" });
+    expect(cambio.status).toBe(200);
+    expect(cambio.body.grupo.color).toBe("#a67430");
+    const quitado = await request(ctx.app)
+      .put(`/api/v1/groups/${grupo.id}`)
+      .set(auth)
+      .send({ color: null });
+    expect(quitado.status).toBe(200);
+    expect(quitado.body.grupo.color).toBeNull();
   });
 });

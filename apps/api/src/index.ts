@@ -15,6 +15,7 @@ try {
   if (config.databasePath !== ":memory:") {
     mkdirSync(dirname(config.databasePath), { recursive: true });
   }
+  mkdirSync(config.imagenesDir, { recursive: true });
   runMigrations(config.databasePath);
   const app = createApp(getDb(config.databasePath), config);
   app.listen(config.port, () => {

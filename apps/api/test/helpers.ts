@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import request from "supertest";
 import { loadEnv, type AppConfig } from "../src/config/env.js";
 import { createDb, closeDb, type Db } from "../src/db/client.js";
 import { runMigrations } from "../src/db/migrate.js";
@@ -40,4 +41,11 @@ export function createTestApp(overrides: Record<string, string | undefined> = {}
       rmSync(dir, { recursive: true, force: true });
     },
   };
+}
+
+/** Registra una cuenta en la app dada y devuelve su access token. */
+export async function registrar(app: Express, email: string, password = "secreta123"): Promise<string> {
+  const res = await request(app).post("/api/v1/auth/registro").send({ email, password });
+  if (res.status !== 201) throw new Error(`Registro fallido (${res.status}): ${JSON.stringify(res.body)}`);
+  return res.body.accessToken as string;
 }

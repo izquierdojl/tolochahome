@@ -44,4 +44,23 @@ export const groups = sqliteTable("groups", {
     .references(() => users.id, { onDelete: "cascade" }),
   nombre: text("nombre").notNull(),
   orden: integer("orden").notNull(),
+  /** Acento visual propio (`#rrggbb`) o NULL para el del tema. */
+  color: text("color"),
+});
+
+/** Favoritos del speed dial: pertenecen a un grupo y a un usuario (doble FK en cascada). */
+export const bookmarks = sqliteTable("bookmarks", {
+  id: text("id").primaryKey(),
+  groupId: text("group_id")
+    .notNull()
+    .references(() => groups.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  titulo: text("titulo").notNull(),
+  url: text("url").notNull(),
+  orden: integer("orden").notNull(),
+  visitas: integer("visitas").notNull().default(0),
+  /** Fichero de imagen propia en el almacén (`imagenes/`), o NULL para favicon. */
+  imagen: text("imagen"),
 });

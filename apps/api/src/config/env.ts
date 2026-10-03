@@ -1,3 +1,5 @@
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
 import { z } from "zod";
 
 /** Acepta "15m", "2h", "30d", "60s" o milisegundos en número. Devuelve ms. */
@@ -28,6 +30,8 @@ const envSchema = z.object({
   REFRESH_GRACE_MS: z.coerce.number().int().min(0).default(60000),
   REGISTRATION_ENABLED: boolSchema,
   STATIC_DIR: z.string().min(1).optional(),
+  IMAGENES_DIR: z.string().min(1).optional(),
+  PREVIEW_ALLOW_PRIVATE: z.string().optional(),
 });
 
 export interface AppConfig {
@@ -42,6 +46,8 @@ export interface AppConfig {
   refreshGraceMs: number;
   registrationEnabled: boolean;
   staticDir?: string;
+  imagenesDir: string;
+  previewAllowPrivate: boolean;
   isProduction: boolean;
 }
 
@@ -59,6 +65,8 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): AppConfig {
     REFRESH_GRACE_MS: source.REFRESH_GRACE_MS,
     REGISTRATION_ENABLED: source.REGISTRATION_ENABLED,
     STATIC_DIR: source.STATIC_DIR,
+    IMAGENES_DIR: source.IMAGENES_DIR,
+    PREVIEW_ALLOW_PRIVATE: source.PREVIEW_ALLOW_PRIVATE,
   });
   const isProduction = parsed.NODE_ENV === "production";
   if (isProduction) {
@@ -83,6 +91,12 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): AppConfig {
     refreshGraceMs: parsed.REFRESH_GRACE_MS,
     registrationEnabled: parsed.REGISTRATION_ENABLED ?? true,
     staticDir: parsed.STATIC_DIR,
+    imagenesDir:
+      parsed.IMAGENES_DIR ??
+      (parsed.DATABASE_PATH === ":memory:"
+        ? join(tmpdir(), "tolochahome-imagenes")
+        : join(dirname(parsed.DATABASE_PATH), "imagenes")),
+    previewAllowPrivate: parsed.PREVIEW_ALLOW_PRIVATE?.toLowerCase() === "true",
     isProduction,
   };
 }
