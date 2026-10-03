@@ -1,0 +1,28 @@
+{
+  "name": "tolochahome",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Startpage autoalojada por usuario: grupos y favoritos speed-dial, búsqueda directa, claro/oscuro",
+  "workspaces": [
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "concurrently -n api,web -c green,cyan \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "npm run dev --workspace @tolochahome/api",
+    "dev:web": "npm run dev --workspace @tolochahome/web",
+    "build": "npm run build --workspace @tolochahome/api && npm run build --workspace @tolochahome/web",
+    "start": "npm run start --workspace @tolochahome/api",
+    "test": "npm run test --workspace @tolochahome/api",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "release:spec": "node scripts/bump.js minor",
+    "release:fix": "node scripts/bump.js patch",
+    "release:major": "node scripts/bump.js major"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

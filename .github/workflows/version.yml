@@ -1,0 +1,41 @@
+name: version
+
+# Tras cada merge a dev: analiza commits desde el último tag y crea
+# commit chore(release): vX.Y.Z + tag vX.Y.Z (dispara release.yml → GHCR).
+on:
+  push:
+    branches: ["dev"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: version-dev
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, 'chore(release):')"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Configurar git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      - name: Decidir bump
+        id: bump
+        run: |
+          BUMP="$(node scripts/determine-bump.js)"
+          echo "bump=$BUMP" >> "$GITHUB_OUTPUT"
+          echo "Bump decidido: $BUMP"
+      - name: Crear release local (commit + tag)
+        run: node scripts/bump.js "${{ steps.bump.outputs.bump }}"
+      - name: Push commit y tag
+        run: git push origin dev && git push origin --tags

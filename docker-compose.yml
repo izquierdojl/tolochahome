@@ -1,0 +1,33 @@
+services:
+  tolochahome:
+    image: ghcr.io/izquierdojl/tolochahome:latest
+    container_name: tolochahome
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_PATH: /data/tolochahome.db
+      STATIC_DIR: /app/apps/web/dist
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Defina JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?Defina JWT_REFRESH_SECRET}
+      JWT_ACCESS_TTL: ${JWT_ACCESS_TTL:-15m}
+      JWT_REFRESH_TTL: ${JWT_REFRESH_TTL:-30d}
+      REGISTRATION_ENABLED: ${REGISTRATION_ENABLED:-true}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+    volumes:
+      # Volumen nombrado: la base SQLite persiste entre reinicios.
+      # (Alternativa bind para inspeccionar la DB: "./data:/data" y asegurar
+      #  que el directorio lo posea el usuario con uid 1000, ej.
+      #  `mkdir -p data && chown 1000:1000 data`.)
+      - tolochahome_data:/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+volumes:
+  tolochahome_data:

@@ -1,0 +1,103 @@
+@import "tailwindcss";
+
+@theme {
+  --color-pine-950: #08100b;
+  --color-pine-900: #0f1a12;
+  --color-pine-850: #122016;
+  --color-pine-800: #17291c;
+  --color-pine-700: #203a28;
+  --color-pine-600: #2c4f38;
+  --color-pine-500: #3c6a4d;
+  --color-pine-400: #5f8f73;
+  --color-pine-300: #8cb29a;
+  --color-pine-200: #bcd2c4;
+  --color-pine-100: #deeae2;
+  --color-pine-50: #f0f5f1;
+
+  --color-ochre-950: #2b1d0c;
+  --color-ochre-900: #4a3314;
+  --color-ochre-800: #6b4a1d;
+  --color-ochre-700: #8a5f26;
+  --color-ochre-600: #a67430;
+  --color-ochre-500: #c0883e;
+  --color-ochre-400: #d3a568;
+  --color-ochre-300: #e2c091;
+  --color-ochre-200: #efdabb;
+  --color-ochre-100: #f7ecdb;
+
+  --font-sans: "Inter", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+
+  --color-surface: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-brand: var(--brand);
+}
+
+/* Por defecto sigue al sistema (auto); el conmutador fija data-theme. */
+:root {
+  color-scheme: light dark;
+}
+
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface: var(--color-pine-950);
+  --surface-raised: var(--color-pine-900);
+  --foreground: var(--color-pine-100);
+  --muted: var(--color-pine-400);
+  --line: var(--color-pine-800);
+  --brand: var(--color-ochre-400);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --surface: #eef3ef;
+  --surface-raised: #ffffff;
+  --foreground: #123424;
+  --muted: #4c6b58;
+  --line: #d9e4dc;
+  --brand: var(--color-ochre-600);
+}
+
+@media (prefers-color-scheme: light) {
+  :root[data-theme="auto"] {
+    color-scheme: light;
+    --surface: #eef3ef;
+    --surface-raised: #ffffff;
+    --foreground: #123424;
+    --muted: #4c6b58;
+    --line: #d9e4dc;
+    --brand: var(--color-ochre-600);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="auto"] {
+    color-scheme: dark;
+    --surface: var(--color-pine-950);
+    --surface-raised: var(--color-pine-900);
+    --foreground: var(--color-pine-100);
+    --muted: var(--color-pine-400);
+    --line: var(--color-pine-800);
+    --brand: var(--color-ochre-400);
+  }
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--surface);
+  background-image:
+    radial-gradient(ellipse 90% 60% at 15% -10%, rgb(60 106 77 / 0.16), transparent 60%),
+    radial-gradient(ellipse 80% 50% at 90% 110%, rgb(74 51 20 / 0.22), transparent 60%),
+    linear-gradient(180deg, var(--surface) 0%, var(--surface-raised) 100%);
+  color: var(--foreground);
+  background-attachment: fixed;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
