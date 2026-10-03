@@ -58,3 +58,4 @@ npm run db:migrate    # aplica migraciones pendientes
 | `REFRESH_GRACE_MS` | `60000` | Gracia del token anterior tras rotar (ms) |
 | `REGISTRATION_ENABLED` | `true` | `false` cierra el registro (mantiene login) |
 | `CORS_ORIGINS` | `-` | Orígenes permitidos coma-separados; vacío desactiva CORS |
+| `IMAGENES_DIR` | `<dir-de-DATABASE_PATH>/imagenes` | Almacén de imágenes propias (volumen `/data`) |

@@ -19,8 +19,20 @@ de navegadores de PC y móvil.
 | [Instalación](docs/instalacion.md) | Requisitos, arranque local, variables de entorno |
 | [Despliegue](docs/despliegue.md) | Docker, GHCR y proxy inverso |
 | [Arquitectura](docs/arquitectura.md) | Monorepo, almacenamiento, sesiones |
-| [API](docs/api.md) | OpenAPI y endpoints (previsto) |
+| [API](docs/api.md) | Endpoints y formato de errores |
 | [Desarrollo](docs/desarrollo.md) | Comandos, CI/CD y versionado |
+
+## Instalación con Docker (recomendado)
+
+```bash
+openssl rand -hex 32  # genera JWT_ACCESS_SECRET (repite para REFRESH)
+docker compose pull
+docker compose up -d
+```
+
+Lee `JWT_ACCESS_SECRET` y `JWT_REFRESH_SECRET` del entorno o de un `.env`
+(ver [.env.example](.env.example)). Detalle en [Despliegue](docs/despliegue.md)
+(proxy inverso, GHCR y variables).
 
 Arranque rápido:
 
