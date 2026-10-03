@@ -39,3 +39,9 @@ jobs:
         run: node scripts/bump.js "${{ steps.bump.outputs.bump }}"
       - name: Push commit y tag
         run: git push origin dev && git push origin --tags
+      - name: Disparar release (los push con GITHUB_TOKEN no lanzan workflows)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="$(git describe --tags --abbrev=0)"
+          gh workflow run release --ref dev -f tag="$TAG"
