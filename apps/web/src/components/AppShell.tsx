@@ -8,7 +8,6 @@ import {
   IconoConfig,
   IconoGestion,
   IconoInfo,
-  IconoInicio,
   IconoLuna,
   IconoSalir,
   IconoSol,
@@ -49,10 +48,18 @@ export function AppShell() {
   return (
     <div className="min-h-dvh flex flex-col">
       <header className="border-b border-line">
-        <nav aria-label="Principal" className="mx-auto flex max-w-3xl items-center gap-1 px-4 py-2">
-          <NavLink to="/" title="Inicio" aria-label="Inicio" className={({ isActive }) => claseEnlace(isActive)}>
-            <IconoInicio />
-          </NavLink>
+        <nav aria-label="Principal" className="relative mx-auto flex max-w-3xl items-center gap-1 px-4 py-2">
+          <Link
+            to="/"
+            title="TolochaHome"
+            aria-label="TolochaHome (inicio)"
+            className="absolute left-1/2 flex -translate-x-1/2 items-center gap-2"
+          >
+            <img src="/logo.svg" alt="" width={28} height={28} className="rounded" />
+            <span className="hidden text-lg font-semibold tracking-tight min-[400px]:inline">
+              Tolocha<span className="text-brand">Home</span>
+            </span>
+          </Link>
           {autenticada && (
             <NavLink
               to="/gestion"
