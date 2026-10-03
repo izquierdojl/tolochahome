@@ -1,6 +1,7 @@
 services:
   tolochahome:
     image: ghcr.io/izquierdojl/tolochahome:latest
+    build: .
     container_name: tolochahome
     restart: unless-stopped
     ports:

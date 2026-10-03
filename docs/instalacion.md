@@ -4,7 +4,7 @@
 
 ## Requisitos
 
-- Node.js >= 22 (ver `.nvmrc`)
+- Node.js >= 24 (ver `.nvmrc`)
 - npm >= 10
 - (Opcional) Docker >= 24 para despliegue en contenedor
 

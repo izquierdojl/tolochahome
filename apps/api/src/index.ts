@@ -1,12 +1,26 @@
-import express from "express";
+import dotenv from "dotenv";
 
-const app = express();
-const PORT = Number(process.env.PORT ?? 3000);
+// Carga .env del workspace o de la raíz del monorepo (lo primero que exista gana).
+dotenv.config({ path: [".env", "../../.env"] });
 
-app.get("/api/v1/health", (_req, res) => {
-  res.json({ ok: true, servicio: "tolochahome" });
-});
+import { mkdirSync } from "node:fs";
+import { dirname } from "node:path";
+import { loadEnv } from "./config/env.js";
+import { getDb } from "./db/client.js";
+import { runMigrations } from "./db/migrate.js";
+import { createApp } from "./app.js";
 
-app.listen(PORT, () => {
-  console.log(`TolochaHome API en puerto ${PORT}`);
-});
+try {
+  const config = loadEnv();
+  if (config.databasePath !== ":memory:") {
+    mkdirSync(dirname(config.databasePath), { recursive: true });
+  }
+  runMigrations(config.databasePath);
+  const app = createApp(getDb(config.databasePath), config);
+  app.listen(config.port, () => {
+    console.log(`TolochaHome API en puerto ${config.port} (${config.nodeEnv})`);
+  });
+} catch (err) {
+  console.error(`Arranque abortado: ${(err as Error).message}`);
+  process.exit(1);
+}

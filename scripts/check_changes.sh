@@ -15,6 +15,8 @@ fi
 
 for dir in "${dirs[@]}"; do
   name="$(basename "$dir")"
+  # El archivo de changes ya archivados no se valida como change activo.
+  if [[ "$name" == "archive" ]]; then continue; fi
   meta="$dir/meta.yaml"
   echo "== $name =="
   if [[ ! -f "$meta" ]]; then

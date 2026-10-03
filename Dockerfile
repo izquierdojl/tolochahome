@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # -- deps: instala dependencias de los workspaces ---------------------------
-FROM node:22-alpine AS deps
+FROM node:24-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/api/package.json apps/api/package.json
@@ -18,7 +18,7 @@ RUN npm run build \
   && npm prune --omit=dev
 
 # -- runtime: imagen final del servicio --------------------------------------
-FROM node:22-alpine AS runtime
+FROM node:24-alpine AS runtime
 ENV NODE_ENV=production \
     PORT=3000 \
     DATABASE_PATH=/data/tolochahome.db \

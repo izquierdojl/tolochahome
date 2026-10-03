@@ -1,20 +1,18 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "./index.css";
+import { App } from "./App.js";
+import { temaInicial } from "./lib/tema.js";
 
-function App() {
-  return (
-    <main className="min-h-dvh grid place-items-center">
-      <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold">TolochaHome</h1>
-        <p className="text-muted">Startpage autoalojada — esqueleto inicial.</p>
-      </div>
-    </main>
-  );
-}
+temaInicial();
+
+const queryClient = new QueryClient();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <App />
+    <QueryClientProvider client={queryClient}>
+      <App />
+    </QueryClientProvider>
   </StrictMode>,
 );

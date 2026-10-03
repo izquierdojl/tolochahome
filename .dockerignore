@@ -8,8 +8,6 @@ README.md
 .env
 data
 coverage
-apps/web/src
-apps/api/src
 openspec
 docs
 scripts
