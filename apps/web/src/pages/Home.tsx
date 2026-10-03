@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../stores/auth.js";
 import { useGroups } from "../hooks/useGroups.js";
+import { useMotores } from "../hooks/useBusqueda.js";
+import { BarraBusqueda } from "../components/BarraBusqueda.js";
 import { SeccionGrupo } from "../components/SeccionGrupo.js";
 
 /** Portada: solo presentación. La gestión vive en `/gestion`. */
@@ -8,6 +10,7 @@ export function Home() {
   const estado = useAuthStore((s) => s.estado);
   const usuario = useAuthStore((s) => s.usuario);
   const grupos = useGroups();
+  const motores = useMotores();
 
   if (estado !== "autenticada" || !usuario) {
     return (
@@ -32,6 +35,7 @@ export function Home() {
 
   return (
     <div className="space-y-4">
+      {motores.data && motores.data.length > 0 && <BarraBusqueda motores={motores.data} />}
       {grupos.isPending && <p className="text-muted">Cargando…</p>}
       {(grupos.data ?? []).map((g) => (
         <SeccionGrupo key={g.id} grupo={g} userId={usuario.id} />

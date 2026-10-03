@@ -64,3 +64,17 @@ export const bookmarks = sqliteTable("bookmarks", {
   /** Fichero de imagen propia en el almacén (`imagenes/`), o NULL para favicon. */
   imagen: text("imagen"),
 });
+
+/** Buscadores configurables por usuario para la barra de búsqueda directa. */
+export const searchEngines = sqliteTable("search_engines", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  nombre: text("nombre").notNull(),
+  urlTemplate: text("url_template").notNull(),
+  alias: text("alias").notNull(),
+  sugerenciasUrl: text("sugerencias_url"),
+  orden: integer("orden").notNull(),
+  porDefecto: integer("por_defecto").notNull().default(0),
+});

@@ -8,6 +8,8 @@ import { errorHandler, notFoundHandler } from "./errors.js";
 import { createAuthRouter } from "./routes/auth.js";
 import { createGroupsRouter } from "./routes/groups.js";
 import { createBookmarksRouter, createImagenesRouter } from "./routes/bookmarks.js";
+import { createSearchRouter } from "./routes/search.js";
+import { createSuggestRouter } from "./routes/suggest.js";
 
 /** Versión del propio workspace (la que publica `bump.js`). */
 function leerVersion(): string {
@@ -41,6 +43,8 @@ export function createApp(db: Db, config: AppConfig): Express {
   app.use("/api/v1/groups", createGroupsRouter({ db, config }));
   app.use("/api/v1/bookmarks", createBookmarksRouter({ db, config }));
   app.use("/api/v1/imagenes", createImagenesRouter({ db, config }));
+  app.use("/api/v1/search-engines", createSearchRouter({ db, config }));
+  app.use("/api/v1/sugerencias", createSuggestRouter({ db, config }));
 
   if (config.staticDir && existsSync(config.staticDir)) {
     const dir = config.staticDir;

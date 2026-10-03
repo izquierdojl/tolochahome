@@ -41,6 +41,7 @@ import {
 } from "../hooks/useBookmarks.js";
 import { usePlegado } from "../components/SeccionGrupo.js";
 import { leerApertura, MosaicoFavorito, type Apertura } from "../components/MosaicoFavorito.js";
+import { GestionMotores } from "../components/GestionMotores.js";
 import {
   IconoBajar,
   IconoConfig,
@@ -677,6 +678,7 @@ export function Gestion() {
       {grupos.data?.length === 0 && (
         <p className="text-muted">Aún no tienes grupos. Crea el primero arriba.</p>
       )}
+      <GestionMotores />
     </div>
   );
 }
