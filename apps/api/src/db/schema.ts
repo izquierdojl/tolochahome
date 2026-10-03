@@ -35,3 +35,13 @@ export const passwordResetTokens = sqliteTable("password_reset_tokens", {
   expiresAt: integer("expires_at").notNull(),
   usedAt: integer("used_at"),
 });
+
+/** Grupos del speed dial: secciones ordenadas de favoritos, privadas por usuario. */
+export const groups = sqliteTable("groups", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  nombre: text("nombre").notNull(),
+  orden: integer("orden").notNull(),
+});

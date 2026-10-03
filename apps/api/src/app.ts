@@ -5,6 +5,7 @@ import type { Db } from "./db/client.js";
 import type { AppConfig } from "./config/env.js";
 import { errorHandler, notFoundHandler } from "./errors.js";
 import { createAuthRouter } from "./routes/auth.js";
+import { createGroupsRouter } from "./routes/groups.js";
 
 export function createApp(db: Db, config: AppConfig): Express {
   const app = express();
@@ -16,6 +17,7 @@ export function createApp(db: Db, config: AppConfig): Express {
     res.json({ ok: true, servicio: "tolochahome" });
   });
   app.use("/api/v1/auth", createAuthRouter({ db, config }));
+  app.use("/api/v1/groups", createGroupsRouter({ db, config }));
 
   if (config.staticDir && existsSync(config.staticDir)) {
     const dir = config.staticDir;
