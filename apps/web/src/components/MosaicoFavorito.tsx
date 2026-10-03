@@ -58,16 +58,20 @@ function useImagenPrivada(nombre: string | null): string | null {
   return url;
 }
 
+import { IconoLapiz, IconoPapelera } from "./Iconos.js";
+
 export function MosaicoFavorito({
   favorito,
   apertura,
   onEditar,
   onBorrar,
+  soloLectura = false,
 }: {
   favorito: Favorito;
   apertura: Apertura;
   onEditar: () => void;
   onBorrar: () => void;
+  soloLectura?: boolean;
 }) {
   const [sinFavicon, setSinFavicon] = useState(false);
   const registrarVisita = useRegistrarVisita();
@@ -109,14 +113,28 @@ export function MosaicoFavorito({
       </a>
       <p className="mt-1 truncate text-center text-xs text-soft">{favorito.titulo}</p>
       <p className="truncate text-center text-xs text-muted">{dominio}</p>
-      <div className="mt-1 flex justify-center gap-2 text-xs">
-        <button type="button" onClick={onEditar} className="text-soft min-h-[44px] px-1">
-          Editar
-        </button>
-        <button type="button" onClick={onBorrar} className="text-muted min-h-[44px] px-1">
-          Borrar
-        </button>
-      </div>
+      {!soloLectura && (
+        <div className="mt-1 flex justify-center gap-1 text-xs">
+          <button
+            type="button"
+            onClick={onEditar}
+            title={`Editar ${favorito.titulo}`}
+            aria-label={`Editar ${favorito.titulo}`}
+            className="flex min-h-[44px] min-w-[44px] items-center justify-center text-soft"
+          >
+            <IconoLapiz />
+          </button>
+          <button
+            type="button"
+            onClick={onBorrar}
+            title={`Borrar ${favorito.titulo}`}
+            aria-label={`Borrar ${favorito.titulo}`}
+            className="flex min-h-[44px] min-w-[44px] items-center justify-center text-muted"
+          >
+            <IconoPapelera />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

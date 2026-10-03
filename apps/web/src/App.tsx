@@ -2,6 +2,9 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-route
 import { AppShell } from "./components/AppShell.js";
 import { useAuthStore } from "./stores/auth.js";
 import { Home } from "./pages/Home.js";
+import { Gestion } from "./pages/Gestion.js";
+import { Config } from "./pages/Config.js";
+import { AcercaDe } from "./pages/AcercaDe.js";
 import { Login } from "./pages/Login.js";
 import { Registro } from "./pages/Registro.js";
 import { Perfil } from "./pages/Perfil.js";
@@ -27,6 +30,23 @@ export function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/registro" element={<Registro />} />
+          <Route
+            path="/gestion"
+            element={
+              <RequireAuth>
+                <Gestion />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/config"
+            element={
+              <RequireAuth>
+                <Config />
+              </RequireAuth>
+            }
+          />
+          <Route path="/acerca-de" element={<AcercaDe />} />
           <Route
             path="/perfil"
             element={
