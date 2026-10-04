@@ -71,3 +71,22 @@ El sistema SHALL ofrecer sugerencias del motor activo al escribir (vía proxy pr
 
 - **WHEN** el motor no trae URL de sugerencias o el proxy falla
 - **THEN** no se muestra nada y la búsqueda manual sigue funcionando
+
+### Requirement: Visibilidad de la barra de búsqueda
+
+La portada `/` SHALL ofrecer un control para mostrar u ocultar la barra de búsqueda, con la barra visible por defecto; la elección SHALL persistir entre sesiones del mismo navegador por usuario, y siempre SHALL quedar un control accesible para volver a mostrarla cuando esté oculta.
+
+#### Scenario: Ocultar la barra
+
+- **WHEN** se activa el control de ocultar sobre la barra visible
+- **THEN** la portada deja de mostrar la barra de búsqueda y queda el control para restaurarla
+
+#### Scenario: Mostrar la barra
+
+- **WHEN** se activa el control de mostrar sobre la barra oculta
+- **THEN** la barra de búsqueda reaparece en su sitio y funciona con normalidad
+
+#### Scenario: Visibilidad persistente
+
+- **WHEN** se recarga la portada tras ocultar o mostrar la barra
+- **THEN** la barra mantiene la última elección (visible si nunca se eligió)

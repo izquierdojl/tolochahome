@@ -104,3 +104,46 @@ El endpoint `GET /api/v1/health` SHALL incluir la versión de la app (`version`)
 
 - **WHEN** se pide `/api/v1/health`
 - **THEN** responde `200` con `{ ok: true, servicio, version, registroAbierto }`
+
+### Requirement: Presentación de enlaces carpetas o listas
+
+La web SHALL ofrecer en `/config` el ajuste «Presentación de enlaces» con dos modos, «Carpetas» y «Listas», con carpetas por defecto; la elección SHALL aplicarse a la portada `/` y persistir entre sesiones del mismo navegador. En modo carpetas la portada se ve como hoy (secciones plegables con mosaicos); en modo listas cada grupo aparece como cabecera y sus favoritos como filas compactas (título y dominio) que abren según la preferencia de apertura.
+
+#### Scenario: Cambiar a listas
+
+- **WHEN** se elige «Listas» en `/config`
+- **THEN** la portada muestra cada grupo como cabecera con sus favoritos en filas compactas, sin persianas ni mosaicos, y se abre cada enlace según la preferencia de apertura
+
+#### Scenario: Volver a carpetas
+
+- **WHEN** se elige «Carpetas» en `/config`
+- **THEN** la portada vuelve a las secciones plegables con mosaicos como antes del cambio
+
+#### Scenario: Modo persistente
+
+- **WHEN** se recarga la app o se vuelve a entrar con el mismo navegador
+- **THEN** la portada mantiene el último modo elegido (carpetas si nunca se eligió)
+
+### Requirement: Plegado y desplegado globales en la portada
+
+La portada `/` SHALL ofrecer un control de plegado global que plega o despliega de una vez todas las secciones de grupos, coherente con el plegado individual por grupo que se guarda por usuario; en modo listas el control no se muestra.
+
+#### Scenario: Plegar todo
+
+- **WHEN** se activa el control con secciones desplegadas
+- **THEN** todas las secciones quedan plegadas de golpe
+
+#### Scenario: Desplegar todo
+
+- **WHEN** se activa el control con secciones plegadas
+- **THEN** todas las secciones quedan desplegadas de golpe
+
+#### Scenario: Estado global persistente
+
+- **WHEN** se recarga la portada tras plegar o desplegar todo
+- **THEN** cada sección mantiene el estado resultante de la acción global
+
+#### Scenario: Sin control en modo listas
+
+- **WHEN** se ve la portada en modo listas
+- **THEN** no aparece el control de plegado global
