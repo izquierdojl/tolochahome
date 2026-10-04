@@ -129,3 +129,22 @@ La web SHALL refrescar los datos meteorológicos automáticamente una vez por ho
 
 - **WHEN** la petición de refresco falla
 - **THEN** se conserva el último dato válido y la interfaz sigue operativa
+
+### Requirement: Previsión de los próximos días
+
+El panel de detalle SHALL mostrar la previsión de los próximos días —hoy y los seis siguientes— para la ciudad seleccionada, con el nombre del día, el icono de su condición y las temperaturas máxima y mínima, en grados Celsius.
+
+#### Scenario: Lista de próximos días
+
+- **WHEN** el usuario abre el detalle con datos disponibles
+- **THEN** ve la previsión de hoy y los seis días siguientes con el nombre del día, el icono de la condición y las temperaturas máxima y mínima
+
+#### Scenario: Cambio de ciudad actualiza la previsión
+
+- **WHEN** el usuario cambia de ciudad en el selector del detalle
+- **THEN** la previsión de los próximos días corresponde a la nueva ciudad seleccionada
+
+#### Scenario: Sin previsión diaria
+
+- **WHEN** Open-Meteo no devuelve previsión diaria
+- **THEN** la sección de próximos días no se muestra y el resto del detalle sigue operativo
