@@ -36,7 +36,7 @@ La web SHALL ofrecer `/gestion` tras `RequireAuth` con la gestión completa (gru
 
 ### Requirement: Navegación por iconos
 
-La cabecera SHALL navegar con iconos SVG (inicio, usuario, tema, configuración, acerca de), con etiqueta accesible y estado activo visible, sin controles en texto. El icono de configuración SHALL ser una rueda dentada, claramente distinta del sol del tema claro.
+La cabecera SHALL navegar con iconos SVG (inicio, usuario, tema, configuración, acerca de), con etiqueta accesible y estado activo visible, sin controles en texto. El icono de configuración SHALL ser una rueda dentada, claramente distinta del sol del tema claro. En viewport estrecho (móvil) la cabecera SHALL colapsar la navegación en un botón de menú que abre un panel desplegable con los mismos destinos como filas etiquetadas (icono + texto); el conmutador de tema SHALL seguir visible fuera del panel.
 
 #### Scenario: Iconos con estado
 
@@ -52,6 +52,21 @@ La cabecera SHALL navegar con iconos SVG (inicio, usuario, tema, configuración,
 
 - **WHEN** se mira la cabecera o las pantallas de configuración y gestión
 - **THEN** el icono de configuración muestra una rueda dentada y no se confunde con el icono de sol del tema
+
+#### Scenario: Menú en viewport estrecho
+
+- **WHEN** se ve la cabecera en un viewport estrecho de móvil
+- **THEN** aparece el botón de menú y los destinos están en su panel, sin botones amontonados ni solapados en la barra
+
+#### Scenario: Elegir destino en el menú
+
+- **WHEN** se elige un destino del panel
+- **THEN** se navega a él y el panel se cierra
+
+#### Scenario: Cerrar el menú
+
+- **WHEN** el panel está abierto y se pulsa `Escape` o fuera de él
+- **THEN** el panel se cierra y el foco vuelve al botón de menú
 
 ### Requirement: Secciones de configuración y acerca de
 
