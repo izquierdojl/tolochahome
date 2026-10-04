@@ -15,11 +15,20 @@ function leerPlegados(userId: string): Set<string> {
 
 /** Estado de plegado compartido de la portada: por grupo + acciones globales. */
 export function usePlegados(userId: string, gruposIds: string[]) {
-  const [plegados, setPlegados] = useState<Set<string>>(() => leerPlegados(userId));
+  const [estado, setEstado] = useState<{ userId: string; plegados: Set<string> }>(() => ({
+    userId,
+    plegados: leerPlegados(userId),
+  }));
+
+  // La portada monta antes de restaurar la sesión: ajusta el estado al aparecer el usuario.
+  if (estado.userId !== userId) {
+    setEstado({ userId, plegados: leerPlegados(userId) });
+  }
+  const plegados = estado.plegados;
 
   function persistir(siguiente: Set<string>) {
     localStorage.setItem(clavePlegados(userId), JSON.stringify([...siguiente]));
-    setPlegados(siguiente);
+    setEstado({ userId, plegados: siguiente });
   }
 
   function alternar(groupId: string) {

@@ -182,3 +182,14 @@ export function IconoOjoTachado() {
     </>,
   );
 }
+
+export function IconoAbrirTodos(props: React.SVGProps<SVGSVGElement>) {
+  return base(
+    props,
+    <>
+      <path d="M13 5h6v6" />
+      <path d="M19 5l-8 8" />
+      <path d="M11 5H6a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5" />
+    </>,
+  );
+}

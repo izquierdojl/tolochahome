@@ -107,12 +107,27 @@ El endpoint `GET /api/v1/health` SHALL incluir la versión de la app (`version`)
 
 ### Requirement: Presentación de enlaces carpetas o listas
 
-La web SHALL ofrecer en `/config` el ajuste «Presentación de enlaces» con dos modos, «Carpetas» y «Listas», con carpetas por defecto; la elección SHALL aplicarse a la portada `/` y persistir entre sesiones del mismo navegador. En modo carpetas la portada se ve como hoy (secciones plegables con mosaicos); en modo listas cada grupo aparece como cabecera y sus favoritos como filas compactas (título y dominio) que abren según la preferencia de apertura.
+La web SHALL ofrecer en `/config` el ajuste «Presentación de enlaces» con dos modos, «Carpetas» y «Listas», con carpetas por defecto; la elección SHALL aplicarse a la portada `/` y persistir entre sesiones del mismo navegador. En modo carpetas la portada se ve como hoy (secciones plegables con mosaicos); en modo listas cada grupo aparece como cabecera plegable, igual que en carpetas, y sus favoritos como filas compactas con imagen o favicon, título y dominio, que abren según la preferencia de apertura.
 
 #### Scenario: Cambiar a listas
 
 - **WHEN** se elige «Listas» en `/config`
-- **THEN** la portada muestra cada grupo como cabecera con sus favoritos en filas compactas, sin persianas ni mosaicos, y se abre cada enlace según la preferencia de apertura
+- **THEN** la portada muestra cada grupo como cabecera plegable con sus favoritos en filas compactas con imagen o favicon, título y dominio, sin mosaicos, y se abre cada enlace según la preferencia de apertura
+
+#### Scenario: Plegar un grupo en listas
+
+- **WHEN** un usuario pliega un grupo desde su cabecera en modo listas
+- **THEN** el grupo se contrae mostrando solo su cabecera; al recargar la portada sigue plegado
+
+#### Scenario: Plegado coherente entre modos
+
+- **WHEN** un usuario pliega un grupo en modo listas y cambia a modo carpetas, o al revés
+- **THEN** el grupo aparece plegado en el modo de destino porque el estado de plegado es el mismo por usuario y grupo
+
+#### Scenario: Imagen en las filas de la lista
+
+- **WHEN** una fila de favorito se muestra en modo listas
+- **THEN** muestra la imagen propia del favorito si existe, o el favicon del sitio si no, o la letra inicial como respaldo cuando el favicon no carga, sin bloquear el resto de filas
 
 #### Scenario: Volver a carpetas
 
