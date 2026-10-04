@@ -25,7 +25,7 @@ export function PanelTiempo({
   const lluviaProxima = datos.proximasHoras[0]?.lluvia ?? 0;
 
   return (
-    <div className="space-y-3 text-sm">
+    <div className="max-h-[70vh] space-y-3 overflow-y-auto text-sm">
       <div className="flex items-center gap-3">
         <IconoTiempo
           clave={claveIcono(datos.actual.codigo, datos.actual.esDia)}
@@ -90,6 +90,23 @@ export function PanelTiempo({
           ))}
         </ul>
       </div>
+      {datos.dias.length > 0 && (
+        <div>
+          <p className="mb-1 text-muted">Próximos días</p>
+          <ul className="space-y-1">
+            {datos.dias.map((d) => (
+              <li key={d.fecha} className="flex items-center justify-between gap-2">
+                <span className="w-16 text-soft">{d.nombre}</span>
+                <IconoTiempo clave={claveIcono(d.codigo, true)} width={22} height={22} />
+                <span className="flex gap-1">
+                  <span>{grados(d.max)}</span>
+                  <span className="text-muted">/ {grados(d.min)}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <p className="text-xs text-muted">
         Actualizado a las {datos.actual.hora}. Datos de{" "}
         <a

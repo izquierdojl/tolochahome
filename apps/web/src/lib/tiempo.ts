@@ -15,6 +15,14 @@ export interface HoraPrevision {
   lluvia: number;
 }
 
+export interface DiaPrevision {
+  fecha: string;
+  nombre: string;
+  codigo: number;
+  max: number;
+  min: number;
+}
+
 export interface DatosTiempo {
   actual: {
     temperatura: number;
@@ -28,6 +36,7 @@ export interface DatosTiempo {
   max: number;
   min: number;
   proximasHoras: HoraPrevision[];
+  dias: DiaPrevision[];
 }
 
 export interface ResultadoCiudad {
@@ -55,6 +64,8 @@ interface RespuestaForecast {
     precipitation_probability?: (number | null)[];
   };
   daily?: {
+    time?: string[];
+    weather_code?: number[];
     temperature_2m_max?: number[];
     temperature_2m_min?: number[];
   };
@@ -68,6 +79,16 @@ interface RespuestaGeocoding {
     admin1?: string;
     country?: string;
   }[];
+}
+
+function nombreDia(fecha: string, indice: number): string {
+  if (indice === 0) return "Hoy";
+  if (indice === 1) return "Mañana";
+  const etiqueta = new Intl.DateTimeFormat("es-ES", { weekday: "short" }).format(
+    new Date(`${fecha}T12:00:00`),
+  );
+  const limpio = etiqueta.replace(/\.$/, "");
+  return limpio.charAt(0).toUpperCase() + limpio.slice(1);
 }
 
 function aDatosTiempo(r: RespuestaForecast): DatosTiempo {
@@ -90,6 +111,18 @@ function aDatosTiempo(r: RespuestaForecast): DatosTiempo {
     lluvia: lluvia[inicio + i] ?? 0,
   }));
 
+  const fechas = r.daily?.time ?? [];
+  const codigosDia = r.daily?.weather_code ?? [];
+  const maximas = r.daily?.temperature_2m_max ?? [];
+  const minimas = r.daily?.temperature_2m_min ?? [];
+  const dias: DiaPrevision[] = fechas.slice(0, 7).map((fecha, i) => ({
+    fecha,
+    nombre: nombreDia(fecha, i),
+    codigo: codigosDia[i] ?? 0,
+    max: maximas[i] ?? 0,
+    min: minimas[i] ?? 0,
+  }));
+
   return {
     actual: {
       temperatura: actual.temperature_2m ?? 0,
@@ -103,6 +136,7 @@ function aDatosTiempo(r: RespuestaForecast): DatosTiempo {
     max: r.daily?.temperature_2m_max?.[0] ?? 0,
     min: r.daily?.temperature_2m_min?.[0] ?? 0,
     proximasHoras,
+    dias,
   };
 }
 
@@ -115,9 +149,9 @@ export async function pedirTiempo(ciudades: Coordenadas[]): Promise<DatosTiempo[
     current:
       "temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,is_day",
     hourly: "temperature_2m,weather_code,precipitation_probability",
-    daily: "temperature_2m_max,temperature_2m_min",
+    daily: "weather_code,temperature_2m_max,temperature_2m_min",
     timezone: "auto",
-    forecast_days: "2",
+    forecast_days: "7",
   });
   const res = await fetch(`${URL_FORECAST}?${params.toString()}`);
   if (!res.ok) throw new Error(`Open-Meteo respondió ${res.status}`);
