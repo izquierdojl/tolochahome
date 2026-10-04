@@ -43,13 +43,11 @@ import { usePlegado } from "../components/SeccionGrupo.js";
 import { leerApertura, MosaicoFavorito, type Apertura } from "../components/MosaicoFavorito.js";
 import { GestionMotores } from "../components/GestionMotores.js";
 import {
-  IconoBajar,
   IconoConfig,
   IconoGuardar,
   IconoLapiz,
   IconoMas,
   IconoPapelera,
-  IconoSubir,
   IconoX,
 } from "../components/Iconos.js";
 
@@ -277,18 +275,13 @@ function TarjetaGrupo({
   grupos,
   apertura,
   userId,
-  primero,
-  ultimo,
 }: {
   grupo: Grupo;
   grupos: Grupo[];
   apertura: Apertura;
   userId: string;
-  primero: boolean;
-  ultimo: boolean;
 }) {
   const renombrar = useRenombrarGrupo();
-  const mover = useMoverGrupo();
   const borrarGrupo = useBorrarGrupo();
   const borrarFavorito = useBorrarFavorito();
   const favoritos = useBookmarks(grupo.id);
@@ -420,26 +413,6 @@ function TarjetaGrupo({
               {grupo.nombre}{" "}
               <span className="text-sm font-normal text-muted">({grupo.favoritos})</span>
             </h2>
-            <button
-              type="button"
-              aria-label={`Subir ${grupo.nombre}`}
-              title="Subir"
-              disabled={primero}
-              onClick={() => mover.mutate({ id: grupo.id, orden: grupo.orden - 1 })}
-              className="flex min-h-[44px] min-w-[44px] items-center justify-center text-soft disabled:opacity-30"
-            >
-              <IconoSubir />
-            </button>
-            <button
-              type="button"
-              aria-label={`Bajar ${grupo.nombre}`}
-              title="Bajar"
-              disabled={ultimo}
-              onClick={() => mover.mutate({ id: grupo.id, orden: grupo.orden + 1 })}
-              className="flex min-h-[44px] min-w-[44px] items-center justify-center text-soft disabled:opacity-30"
-            >
-              <IconoBajar />
-            </button>
             <button
               type="button"
               onClick={() => setEditando(true)}
@@ -657,8 +630,6 @@ export function Gestion() {
                 grupos={grupos.data}
                 apertura={apertura}
                 userId={usuario?.id ?? ""}
-                primero={i === 0}
-                ultimo={i === grupos.data.length - 1}
               />
             </div>
           ))}

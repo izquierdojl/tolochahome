@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { esApiError } from "../lib/api.js";
 import { useAuthStore } from "../stores/auth.js";
 import { IconoConfig } from "../components/Iconos.js";
-import { leerApertura, type Apertura } from "../components/MosaicoFavorito.js";
+import { leerApertura, leerTamano, guardarTamano, TAMANOS_ENLACE, type Apertura, type TamanoEnlace } from "../components/MosaicoFavorito.js";
 
 interface Salud {
   ok: boolean;
@@ -120,6 +120,7 @@ function Intercambio() {
 
 export function Config() {
   const [apertura, setApertura] = useState<Apertura>(() => leerApertura());
+  const [tamano, setTamano] = useState<TamanoEnlace>(() => leerTamano());
   const salud = useQuery({
     queryKey: ["salud"],
     queryFn: () => fetch("/api/v1/health").then((r) => r.json() as Promise<Salud>),
@@ -128,6 +129,11 @@ export function Config() {
   function cambiarApertura(v: Apertura) {
     setApertura(v);
     localStorage.setItem("tolochahome-apertura", v);
+  }
+
+  function cambiarTamano(v: TamanoEnlace) {
+    setTamano(v);
+    guardarTamano(v);
   }
 
   return (
@@ -149,6 +155,24 @@ export function Config() {
               }`}
             >
               {v === "nueva" ? "Nueva pestaña" : "Misma pestaña"}
+            </button>
+          ))}
+        </div>
+      </section>
+      <section className="space-y-2 rounded border border-line p-4">
+        <h2 className="font-bold">Tamaño de enlaces</h2>
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Tamaño de enlaces">
+          {TAMANOS_ENLACE.map((t) => (
+            <button
+              key={t.valor}
+              type="button"
+              aria-pressed={tamano === t.valor}
+              onClick={() => cambiarTamano(t.valor)}
+              className={`min-h-[44px] flex-1 rounded border px-3 text-sm whitespace-nowrap ${
+                tamano === t.valor ? "border-brand font-bold text-brand" : "border-line text-muted"
+              }`}
+            >
+              {t.etiqueta}
             </button>
           ))}
         </div>

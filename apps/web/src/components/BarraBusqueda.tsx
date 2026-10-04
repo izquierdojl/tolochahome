@@ -2,56 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { leerApertura } from "./MosaicoFavorito.js";
 import { pedirSugerencias, type Motor } from "../hooks/useBusqueda.js";
 
-/** Origen del motor para su favicon (la plantilla trae `{q}`). */
-function origenDe(motor: Motor): string {
-  try {
-    return new URL(motor.urlTemplate.replace("{q}", "x")).origin;
-  } catch {
-    return "";
-  }
-}
-
-function BotonMotor({
-  motor,
-  activo,
-  onElegir,
-}: {
-  motor: Motor;
-  activo: boolean;
-  onElegir: () => void;
-}) {
-  const [sinIcono, setSinIcono] = useState(false);
-  const origen = origenDe(motor);
-  return (
-    <button
-      key={motor.id}
-      type="button"
-      title={`${motor.nombre} (${motor.alias})`}
-      aria-label={`Buscar con ${motor.nombre}`}
-      aria-pressed={activo}
-      onClick={onElegir}
-      className={`flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border min-h-[36px] ${
-        activo ? "border-brand" : "border-line"
-      } bg-surface-raised`}
-    >
-      {origen && !sinIcono ? (
-        <img
-          src={`${origen}/favicon.ico`}
-          alt=""
-          loading="lazy"
-          width={20}
-          height={20}
-          onError={() => setSinIcono(true)}
-        />
-      ) : (
-        <span className={`text-sm font-bold ${activo ? "text-brand" : "text-muted"}`}>
-          {motor.nombre.trim().charAt(0).toUpperCase() || "?"}
-        </span>
-      )}
-    </button>
-  );
-}
-
 /** Extrae `alias + resto` si el inicio coincide con un motor conocido. */
 export function resolverAlias(
   motores: Motor[],
@@ -157,17 +107,26 @@ export function BarraBusqueda({ motores }: { motores: Motor[] }) {
   if (!motor) return null;
   return (
     <div ref={caja} className="relative mx-auto w-full max-w-xl">
-      <div role="group" aria-label="Elegir buscador" className="mb-2 flex justify-center gap-2">
-        {motores.map((m) => (
-          <BotonMotor key={m.id} motor={m} activo={m.id === motor.id} onElegir={() => setMotorId(m.id)} />
-        ))}
-      </div>
       <form
         onSubmit={(e) => {
           e.preventDefault();
           buscar(texto);
         }}
+        className="flex gap-2"
       >
+        <select
+          value={motor.id}
+          onChange={(e) => setMotorId(e.target.value)}
+          aria-label="Elegir buscador"
+          title={`Buscador: ${motor.nombre} (${motor.alias})`}
+          className="min-h-[44px] w-32 shrink-0 rounded border border-line bg-surface-raised px-2 text-sm text-soft"
+        >
+          {motores.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.nombre}
+            </option>
+          ))}
+        </select>
         <input
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
@@ -180,7 +139,7 @@ export function BarraBusqueda({ motores }: { motores: Motor[] }) {
           role="combobox"
           aria-autocomplete="list"
           autoComplete="off"
-          className="w-full rounded border border-line bg-surface px-4 py-3 min-h-[44px]"
+          className="w-full min-w-0 flex-1 rounded border border-line bg-surface px-4 py-3 min-h-[44px]"
         />
       </form>
       {abierta && (

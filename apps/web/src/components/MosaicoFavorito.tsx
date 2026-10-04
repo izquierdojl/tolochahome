@@ -10,6 +10,35 @@ export function leerApertura(): Apertura {
   return localStorage.getItem(CLAVE_APERTURA) === "misma" ? "misma" : "nueva";
 }
 
+export type TamanoEnlace = "xs" | "s" | "m" | "l" | "xl";
+const CLAVE_TAMANO = "tolochahome-tamano-enlaces";
+
+export const TAMANOS_ENLACE: { valor: TamanoEnlace; etiqueta: string }[] = [
+  { valor: "xs", etiqueta: "Muy pequeño" },
+  { valor: "s", etiqueta: "Pequeño" },
+  { valor: "m", etiqueta: "Mediano" },
+  { valor: "l", etiqueta: "Grande" },
+  { valor: "xl", etiqueta: "Muy grande" },
+];
+
+export function leerTamano(): TamanoEnlace {
+  const v = localStorage.getItem(CLAVE_TAMANO);
+  return v === "xs" || v === "s" || v === "m" || v === "l" || v === "xl" ? v : "m";
+}
+
+export function guardarTamano(v: TamanoEnlace): void {
+  localStorage.setItem(CLAVE_TAMANO, v);
+}
+
+/** Anchura del mosaico y altura de la imagen por nivel (`m` = tamaño actual). */
+const CLASES_TAMANO: Record<TamanoEnlace, { caja: string; imagen: string }> = {
+  xs: { caja: "w-20", imagen: "h-14" },
+  s: { caja: "w-24", imagen: "h-16" },
+  m: { caja: "w-28", imagen: "h-20" },
+  l: { caja: "w-32", imagen: "h-24" },
+  xl: { caja: "w-36", imagen: "h-28" },
+};
+
 /** Inicial de respaldo cuando ni la imagen ni el favicon cargan. */
 function inicial(titulo: string): string {
   const letra = titulo.trim().charAt(0);
@@ -77,6 +106,8 @@ export function MosaicoFavorito({
   const registrarVisita = useRegistrarVisita();
   const imagenPropia = useImagenPrivada(favorito.imagen);
   const dominio = dominioDe(favorito.url);
+  const [tamano] = useState<TamanoEnlace>(() => leerTamano());
+  const clases = CLASES_TAMANO[tamano];
 
   function abrir(e: React.MouseEvent) {
     // La gestión (editar/borrar) vive en botones propios; el mosaico abre.
@@ -87,12 +118,12 @@ export function MosaicoFavorito({
   }
 
   return (
-    <div className="w-28 shrink-0">
+    <div className={`${clases.caja} shrink-0`}>
       <a
         href={favorito.url}
         title={`${favorito.titulo} — ${dominio}`}
         onClick={abrir}
-        className="flex h-20 items-center justify-center overflow-hidden rounded border border-line bg-surface-raised"
+        className={`flex ${clases.imagen} items-center justify-center overflow-hidden rounded border border-line bg-surface-raised`}
       >
         {imagenPropia ? (
           <img src={imagenPropia} alt="" loading="lazy" className="h-full w-full object-cover" />
