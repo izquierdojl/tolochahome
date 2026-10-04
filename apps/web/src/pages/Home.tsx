@@ -74,32 +74,46 @@ export function Home() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-end gap-1">
-        {enCarpetas && idsGrupos.length > 0 && (
+      {busquedaVisible ? (
+        <div className="mx-auto flex w-full max-w-xl items-center gap-1">
+          {motores.data && motores.data.length > 0 && <BarraBusqueda motores={motores.data} />}
           <button
             type="button"
-            onClick={plegados.todoPlegado ? plegados.desplegarTodos : plegados.plegarTodos}
-            aria-expanded={!plegados.todoPlegado}
-            title={plegados.todoPlegado ? "Desplegar todas las secciones" : "Plegar todas las secciones"}
-            aria-label={plegados.todoPlegado ? "Desplegar todas las secciones" : "Plegar todas las secciones"}
+            onClick={alternarBusqueda}
+            aria-pressed={busquedaVisible}
+            title="Ocultar la barra de búsqueda"
+            aria-label="Ocultar la barra de búsqueda"
+            className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded text-muted"
+          >
+            <IconoOjoTachado />
+          </button>
+        </div>
+      ) : (
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={alternarBusqueda}
+            aria-pressed={busquedaVisible}
+            title="Mostrar la barra de búsqueda"
+            aria-label="Mostrar la barra de búsqueda"
             className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded text-muted"
           >
-            {plegados.todoPlegado ? <IconoDesplegar /> : <IconoPlegar />}
+            <IconoOjo />
           </button>
-        )}
+        </div>
+      )}
+      {enCarpetas && idsGrupos.length > 0 && (
         <button
           type="button"
-          onClick={alternarBusqueda}
-          aria-pressed={busquedaVisible}
-          title={busquedaVisible ? "Ocultar la barra de búsqueda" : "Mostrar la barra de búsqueda"}
-          aria-label={busquedaVisible ? "Ocultar la barra de búsqueda" : "Mostrar la barra de búsqueda"}
-          className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded text-muted"
+          onClick={plegados.todoPlegado ? plegados.desplegarTodos : plegados.plegarTodos}
+          aria-expanded={!plegados.todoPlegado}
+          title={plegados.todoPlegado ? "Desplegar todas las secciones" : "Plegar todas las secciones"}
+          aria-label={plegados.todoPlegado ? "Desplegar todas las secciones" : "Plegar todas las secciones"}
+          className="flex min-h-[44px] items-center gap-2 rounded px-1 text-sm text-muted"
         >
-          {busquedaVisible ? <IconoOjoTachado /> : <IconoOjo />}
+          {plegados.todoPlegado ? <IconoDesplegar /> : <IconoPlegar />}
+          <span>{plegados.todoPlegado ? "Desplegar todo" : "Plegar todo"}</span>
         </button>
-      </div>
-      {busquedaVisible && motores.data && motores.data.length > 0 && (
-        <BarraBusqueda motores={motores.data} />
       )}
       {grupos.isPending && <p className="text-muted">Cargando…</p>}
       {(grupos.data ?? []).map((g) => (
