@@ -25,7 +25,20 @@ docker run -d --name tolochahome -p 127.0.0.1:3000:3000 \
   ghcr.io/izquierdojl/tolochahome:latest
 ```
 
-Actualizar: `docker compose pull && docker compose up -d`.
+### Actualizar una instancia en producción
+
+```bash
+docker compose pull
+docker compose up -d --force-recreate
+```
+
+> El `docker-compose.yml` define a la vez `image:` y `build: .`. Por eso
+> `docker compose up -d` a secas **no** actualiza (reutiliza la imagen local),
+> y si alguna vez has construido la imagen en ese host, su etiqueta `:latest`
+> local "tapa" a la del registro hasta que hagas `docker compose pull`.
+> Verifica la versión tras actualizar con `curl -s http://127.0.0.1:3000/api/v1/health`.
+> En el navegador, haz una recarga forzada (`Ctrl+Shift+R`) para descartar el
+> bundle cacheado.
 
 ## Build local
 
