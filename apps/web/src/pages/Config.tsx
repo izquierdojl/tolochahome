@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { esApiError } from "../lib/api.js";
 import { useAuthStore } from "../stores/auth.js";
 import { IconoConfig } from "../components/Iconos.js";
-import { leerApertura, leerTamano, guardarTamano, TAMANOS_ENLACE, type Apertura, type TamanoEnlace } from "../components/MosaicoFavorito.js";
+import { leerApertura, leerTamano, guardarTamano, leerModo, guardarModo, TAMANOS_ENLACE, type Apertura, type TamanoEnlace, type ModoEnlace } from "../components/MosaicoFavorito.js";
 
 interface Salud {
   ok: boolean;
@@ -121,6 +121,7 @@ function Intercambio() {
 export function Config() {
   const [apertura, setApertura] = useState<Apertura>(() => leerApertura());
   const [tamano, setTamano] = useState<TamanoEnlace>(() => leerTamano());
+  const [modo, setModo] = useState<ModoEnlace>(() => leerModo());
   const salud = useQuery({
     queryKey: ["salud"],
     queryFn: () => fetch("/api/v1/health").then((r) => r.json() as Promise<Salud>),
@@ -134,6 +135,11 @@ export function Config() {
   function cambiarTamano(v: TamanoEnlace) {
     setTamano(v);
     guardarTamano(v);
+  }
+
+  function cambiarModo(v: ModoEnlace) {
+    setModo(v);
+    guardarModo(v);
   }
 
   return (
@@ -173,6 +179,24 @@ export function Config() {
               }`}
             >
               {t.etiqueta}
+            </button>
+          ))}
+        </div>
+      </section>
+      <section className="space-y-2 rounded border border-line p-4">
+        <h2 className="font-bold">Presentación de enlaces</h2>
+        <div className="flex gap-2" role="group" aria-label="Presentación de enlaces">
+          {(["carpetas", "listas"] as ModoEnlace[]).map((v) => (
+            <button
+              key={v}
+              type="button"
+              aria-pressed={modo === v}
+              onClick={() => cambiarModo(v)}
+              className={`min-h-[44px] flex-1 rounded border px-3 ${
+                modo === v ? "border-brand font-bold text-brand" : "border-line text-muted"
+              }`}
+            >
+              {v === "carpetas" ? "Carpetas" : "Listas"}
             </button>
           ))}
         </div>

@@ -13,6 +13,17 @@ export function leerApertura(): Apertura {
 export type TamanoEnlace = "xs" | "s" | "m" | "l" | "xl";
 const CLAVE_TAMANO = "tolochahome-tamano-enlaces";
 
+export type ModoEnlace = "carpetas" | "listas";
+const CLAVE_MODO = "tolochahome-modo-enlaces";
+
+export function leerModo(): ModoEnlace {
+  return localStorage.getItem(CLAVE_MODO) === "listas" ? "listas" : "carpetas";
+}
+
+export function guardarModo(v: ModoEnlace): void {
+  localStorage.setItem(CLAVE_MODO, v);
+}
+
 export const TAMANOS_ENLACE: { valor: TamanoEnlace; etiqueta: string }[] = [
   { valor: "xs", etiqueta: "Muy pequeño" },
   { valor: "s", etiqueta: "Pequeño" },

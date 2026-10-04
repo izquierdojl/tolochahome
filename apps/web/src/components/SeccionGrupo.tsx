@@ -1,41 +1,46 @@
-import { useState } from "react";
 import type { Grupo } from "../hooks/useGroups.js";
-import { useBookmarks } from "../hooks/useBookmarks.js";
-import { MosaicoFavorito, leerApertura } from "../components/MosaicoFavorito.js";
+import type { Favorito } from "../hooks/useBookmarks.js";
+import { useBookmarks, useRegistrarVisita } from "../hooks/useBookmarks.js";
+import { MosaicoFavorito, leerApertura, dominioDe, type ModoEnlace, type Apertura } from "../components/MosaicoFavorito.js";
 
-function clavePlegados(userId: string): string {
-  return `tolochahome-plegados:${userId}`;
-}
+function FilaFavorito({ favorito, apertura }: { favorito: Favorito; apertura: Apertura }) {
+  const registrarVisita = useRegistrarVisita();
+  const dominio = dominioDe(favorito.url);
 
-function leerPlegados(userId: string): Set<string> {
-  try {
-    const raw = localStorage.getItem(clavePlegados(userId));
-    return new Set(raw ? (JSON.parse(raw) as string[]) : []);
-  } catch {
-    return new Set();
+  function abrir(e: React.MouseEvent) {
+    e.preventDefault();
+    registrarVisita.mutate(favorito.id);
+    window.open(favorito.url, apertura === "nueva" ? "_blank" : "_self", "noopener");
   }
-}
 
-export function usePlegado(userId: string, groupId: string): [boolean, () => void] {
-  const [plegados, setPlegados] = useState<Set<string>>(() => leerPlegados(userId));
-  const plegado = plegados.has(groupId);
-  function alternar() {
-    setPlegados((prev) => {
-      const siguiente = new Set(prev);
-      if (siguiente.has(groupId)) siguiente.delete(groupId);
-      else siguiente.add(groupId);
-      localStorage.setItem(clavePlegados(userId), JSON.stringify([...siguiente]));
-      return siguiente;
-    });
-  }
-  return [plegado, alternar];
+  return (
+    <a
+      href={favorito.url}
+      onClick={abrir}
+      title={`${favorito.titulo} — ${dominio}`}
+      className="flex min-h-[44px] items-center gap-3 rounded px-2 text-soft"
+    >
+      <span className="min-w-0 flex-1 truncate font-medium">{favorito.titulo}</span>
+      <span className="truncate text-sm text-muted">{dominio}</span>
+    </a>
+  );
 }
 
 /** Sección de grupo solo presentación: cabecera, persiana y mosaicos de apertura. */
-export function SeccionGrupo({ grupo, userId }: { grupo: Grupo; userId: string }) {
+export function SeccionGrupo({
+  grupo,
+  modo,
+  plegado,
+  alternarPlegado,
+}: {
+  grupo: Grupo;
+  modo: ModoEnlace;
+  plegado: boolean;
+  alternarPlegado: () => void;
+}) {
   const favoritos = useBookmarks(grupo.id);
-  const [plegado, alternarPlegado] = usePlegado(userId, grupo.id);
   const apertura = leerApertura();
+  const listas = modo === "listas";
 
   return (
     <section
@@ -46,31 +51,43 @@ export function SeccionGrupo({ grupo, userId }: { grupo: Grupo; userId: string }
       }}
       className="rounded border border-line p-4"
     >
-      <button
-        type="button"
-        onClick={alternarPlegado}
-        aria-expanded={!plegado}
-        className="flex min-h-[44px] w-full items-center gap-2 text-left"
-      >
-        <span className={`inline-block transition-transform ${plegado ? "-rotate-90" : ""}`}>▾</span>
-        <span className="flex-1 text-lg font-bold">{grupo.nombre}</span>
-        <span className="text-sm font-normal text-muted">({grupo.favoritos})</span>
-      </button>
+      {listas ? (
+        <h2 className="text-lg font-bold">{grupo.nombre}</h2>
+      ) : (
+        <button
+          type="button"
+          onClick={alternarPlegado}
+          aria-expanded={!plegado}
+          className="flex min-h-[44px] w-full items-center gap-2 text-left"
+        >
+          <span className={`inline-block transition-transform ${plegado ? "-rotate-90" : ""}`}>▾</span>
+          <span className="flex-1 text-lg font-bold">{grupo.nombre}</span>
+          <span className="text-sm font-normal text-muted">({grupo.favoritos})</span>
+        </button>
+      )}
       <div
-        className={`grid transition-[grid-template-rows] duration-300 ${plegado ? "grid-rows-[0fr]" : "grid-rows-[1fr]"}`}
+        className={
+          listas
+            ? "mt-2"
+            : `grid transition-[grid-template-rows] duration-300 ${plegado ? "grid-rows-[0fr]" : "grid-rows-[1fr]"}`
+        }
       >
-        <div className="overflow-hidden">
-          <div className="mt-3 flex flex-wrap gap-3">
-            {favoritos.data?.map((f) => (
-              <MosaicoFavorito
-                key={f.id}
-                favorito={f}
-                apertura={apertura}
-                onEditar={() => undefined}
-                onBorrar={() => undefined}
-                soloLectura
-              />
-            ))}
+        <div className={listas ? "" : "overflow-hidden"}>
+          <div className={listas ? "space-y-0.5" : "mt-3 flex flex-wrap gap-3"}>
+            {favoritos.data?.map((f) =>
+              listas ? (
+                <FilaFavorito key={f.id} favorito={f} apertura={apertura} />
+              ) : (
+                <MosaicoFavorito
+                  key={f.id}
+                  favorito={f}
+                  apertura={apertura}
+                  onEditar={() => undefined}
+                  onBorrar={() => undefined}
+                  soloLectura
+                />
+              ),
+            )}
             {favoritos.data?.length === 0 && (
               <p className="text-sm text-muted">Sin favoritos todavía.</p>
             )}

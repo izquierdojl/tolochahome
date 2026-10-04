@@ -39,7 +39,7 @@ import {
   useSubirImagen,
   type Favorito,
 } from "../hooks/useBookmarks.js";
-import { usePlegado } from "../components/SeccionGrupo.js";
+import { usePlegado } from "../hooks/usePlegados.js";
 import { leerApertura, MosaicoFavorito, type Apertura } from "../components/MosaicoFavorito.js";
 import { GestionMotores } from "../components/GestionMotores.js";
 import {

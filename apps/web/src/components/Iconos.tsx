@@ -79,9 +79,8 @@ export function IconoConfig() {
   return base(
     {},
     <>
+      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
       <circle cx="12" cy="12" r="3" />
-      <circle cx="12" cy="12" r="1" />
-      <path d="M17 12h2M15.5 15.5l1.4 1.4M12 17v2M8.5 15.5l-1.4 1.4M7 12H5M8.5 8.5 7.1 7.1M12 7V5M15.5 8.5l1.4-1.4" />
     </>,
   );
 }
@@ -153,4 +152,33 @@ export function IconoGuardar() {
 
 export function IconoMenu() {
   return base({}, <path d="M4 7h16M4 12h16M4 17h16" />);
+}
+
+export function IconoPlegar() {
+  return base({}, <path d="M6 6l6 6 6-6M6 13l6 6 6-6" />);
+}
+
+export function IconoDesplegar() {
+  return base({}, <path d="M6 18l6-6 6 6M6 11l6-6 6 6" />);
+}
+
+export function IconoOjo() {
+  return base(
+    {},
+    <>
+      <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" />
+      <circle cx="12" cy="12" r="3" />
+    </>,
+  );
+}
+
+export function IconoOjoTachado() {
+  return base(
+    {},
+    <>
+      <path d="M4 4l16 16" />
+      <path d="M10.6 6a15.6 15.6 0 0 1 1.4-.5c6 0 9.5 6.5 9.5 6.5a17.6 17.6 0 0 1-2.7 3.4M6.6 7.9A17 17 0 0 0 2.5 12S6 18.5 12 18.5a9.4 9.4 0 0 0 4.2-1" />
+      <path d="M9.9 10.2a3 3 0 0 0 4 4" />
+    </>,
+  );
 }
