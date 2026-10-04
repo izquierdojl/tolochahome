@@ -1,4 +1,4 @@
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 /** Cuentas de usuario. El email es único (comparación insensible a mayúsculas a nivel de aplicación). */
 export const users = sqliteTable("users", {
@@ -75,6 +75,19 @@ export const searchEngines = sqliteTable("search_engines", {
   urlTemplate: text("url_template").notNull(),
   alias: text("alias").notNull(),
   sugerenciasUrl: text("sugerencias_url"),
+  orden: integer("orden").notNull(),
+  porDefecto: integer("por_defecto").notNull().default(0),
+});
+
+/** Ciudades meteorológicas por usuario para el chip de tiempo (Open-Meteo). */
+export const weatherLocations = sqliteTable("weather_locations", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  nombre: text("nombre").notNull(),
+  lat: real("lat").notNull(),
+  lon: real("lon").notNull(),
   orden: integer("orden").notNull(),
   porDefecto: integer("por_defecto").notNull().default(0),
 });

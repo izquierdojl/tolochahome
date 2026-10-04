@@ -1,5 +1,7 @@
 /** Iconos SVG inline propios (sin dependencias): trazo actual, 24px. */
 
+import type { ClaveIcono } from "../lib/tiempo.js";
+
 function base(props: React.SVGProps<SVGSVGElement>, camino: React.ReactNode) {
   return (
     <svg
@@ -192,4 +194,83 @@ export function IconoAbrirTodos(props: React.SVGProps<SVGSVGElement>) {
       <path d="M11 5H6a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5" />
     </>,
   );
+}
+
+/** Icono meteorológico según la clave del código WMO. */
+export function IconoTiempo({
+  clave,
+  ...props
+}: { clave: ClaveIcono } & React.SVGProps<SVGSVGElement>) {
+  const nube = <path d="M6.5 17h10a3.3 3.3 0 0 0 .3-6.6A4.4 4.4 0 0 0 8.4 9.2 3.3 3.3 0 0 0 6.5 17Z" />;
+  switch (clave) {
+    case "despejado-dia":
+      return base(
+        props,
+        <>
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 3v2.4M12 18.6V21M3 12h2.4M18.6 12H21M5.3 5.3 7 7M17 17l1.7 1.7M18.7 5.3 17 7M7 17l-1.7 1.7" />
+        </>,
+      );
+    case "despejado-noche":
+      return base(props, <path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z" />);
+    case "parcial-dia":
+      return base(
+        props,
+        <>
+          <circle cx="8.5" cy="7.5" r="2.4" />
+          <path d="M8.5 3.2v1.3M8.5 10.5v1.3M4.2 7.5h1.3M11.5 7.5h1.3M5.4 4.4 6.3 5.3M10.7 9.7l.9.9M11.6 4.4l-.9.9" />
+          {nube}
+        </>,
+      );
+    case "parcial-noche":
+      return base(
+        props,
+        <>
+          <path d="M12 3.5A4.5 4.5 0 0 1 6.8 9 4.5 4.5 0 1 0 12 3.5Z" />
+          {nube}
+        </>,
+      );
+    case "nublado":
+      return base(props, nube);
+    case "niebla":
+      return base(
+        props,
+        <>
+          {nube}
+          <path d="M6.5 20h11M8.5 22.4h7" />
+        </>,
+      );
+    case "llovizna":
+      return base(
+        props,
+        <>
+          {nube}
+          <path d="M9 19.6v1.1M13 19.6v1.1M17 19.6v1.1" />
+        </>,
+      );
+    case "lluvia":
+      return base(
+        props,
+        <>
+          {nube}
+          <path d="M9.4 19l-1.2 2.6M13.4 19l-1.2 2.6M17.4 19l-1.2 2.6" />
+        </>,
+      );
+    case "nieve":
+      return base(
+        props,
+        <>
+          {nube}
+          <path d="M9.5 19.6v2.2M8.4 20.7h2.2M15.5 19.6v2.2M14.4 20.7h2.2" />
+        </>,
+      );
+    case "tormenta":
+      return base(
+        props,
+        <>
+          {nube}
+          <path d="M12.6 17.6 10.4 21h2l-1 2.2" />
+        </>,
+      );
+  }
 }

@@ -18,7 +18,8 @@ En desarrollo, Vite hace proxy de `/api` a la API.
 ## Componentes clave (previsto)
 
 - **Almacenamiento**: SQLite vía Drizzle (`users`, `refresh_tokens`,
-  `password_reset_tokens`, `groups`, `bookmarks`, `search_engines`).
+  `password_reset_tokens`, `groups`, `bookmarks`, `search_engines`,
+  `weather_locations`).
 - **Sesiones**: access token JWT (15 min) en memoria + cookie httpOnly
   `tolocha-refresh` rotatoria. `REGISTRATION_ENABLED=false` cierra el alta.
 - **Startpage**: grupos + speed dial de favoritos con previsualización

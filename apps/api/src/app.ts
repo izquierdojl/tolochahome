@@ -9,6 +9,7 @@ import { createAuthRouter } from "./routes/auth.js";
 import { createGroupsRouter } from "./routes/groups.js";
 import { createBookmarksRouter, createImagenesRouter } from "./routes/bookmarks.js";
 import { createSearchRouter } from "./routes/search.js";
+import { createWeatherRouter } from "./routes/weather.js";
 import { createSuggestRouter } from "./routes/suggest.js";
 import { createIntercambioRouter } from "./routes/intercambio.js";
 
@@ -45,6 +46,7 @@ export function createApp(db: Db, config: AppConfig): Express {
   app.use("/api/v1/bookmarks", createBookmarksRouter({ db, config }));
   app.use("/api/v1/imagenes", createImagenesRouter({ db, config }));
   app.use("/api/v1/search-engines", createSearchRouter({ db, config }));
+  app.use("/api/v1/weather-locations", createWeatherRouter({ db, config }));
   app.use("/api/v1/sugerencias", createSuggestRouter({ db, config }));
   app.use("/api/v1", createIntercambioRouter({ db, config }));
 

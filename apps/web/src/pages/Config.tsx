@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { esApiError } from "../lib/api.js";
 import { useAuthStore } from "../stores/auth.js";
 import { IconoConfig } from "../components/Iconos.js";
+import { GestionCiudades } from "../components/GestionCiudades.js";
 import { leerApertura, leerTamano, guardarTamano, leerModo, guardarModo, TAMANOS_ENLACE, type Apertura, type TamanoEnlace, type ModoEnlace } from "../components/MosaicoFavorito.js";
 
 interface Salud {
@@ -201,6 +202,7 @@ export function Config() {
           ))}
         </div>
       </section>
+      <GestionCiudades />
       <section className="space-y-2 rounded border border-line p-4">
         <h2 className="font-bold">Registro</h2>
         <p className="text-sm text-muted">

@@ -27,6 +27,8 @@ Prefijo: `/api/v1`.
 | `POST` | `/api/v1/bookmarks/previsualizar` | Título + og:image de una URL |
 | `GET/POST` | `/api/v1/search-engines` | Listar (con semillas) / crear buscadores |
 | `PUT/DELETE` | `/api/v1/search-engines/:id` | Editar / borrar |
+| `GET/POST` | `/api/v1/weather-locations` | Listar / crear ciudades del tiempo |
+| `PUT/DELETE` | `/api/v1/weather-locations/:id` | Editar (nombre, orden, por defecto) / borrar |
 | `GET` | `/api/v1/sugerencias?motor=&q=` | Sugerencias normalizadas |
 | `POST` | `/api/v1/import` | Importar Netscape HTML o JSON |
 | `GET` | `/api/v1/export?formato=html\|json` | Exportar como adjunto |
