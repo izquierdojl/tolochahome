@@ -36,7 +36,7 @@ El sistema SHALL permitir a un usuario autenticado crear, listar, editar, borrar
 
 ### Requirement: Buscar con atajos
 
-La web SHALL ofrecer barra central con motor seleccionable y atajos por alias al inicio del texto (`g …`, `w …`, `d …` o personalizados); `Enter` abre la URL resultante según la preferencia de apertura.
+La web SHALL ofrecer barra central en una sola línea horizontal con la caja de texto junto a un selector del motor activo (combobox que muestra el motor en uso y permite cambiarlo), y atajos por alias al inicio del texto (`g …`, `w …`, `d …` o personalizados); `Enter` abre la URL resultante según la preferencia de apertura.
 
 #### Scenario: Búsqueda directa
 
@@ -47,6 +47,16 @@ La web SHALL ofrecer barra central con motor seleccionable y atajos por alias al
 
 - **WHEN** el texto empieza por un alias conocido más espacio
 - **THEN** se usa ese motor para esa búsqueda sin cambiar el activo
+
+#### Scenario: Selector de motor en la misma línea
+
+- **WHEN** se mira la barra de búsqueda
+- **THEN** el selector del motor y la caja de texto comparten una sola línea horizontal, sin fila separada de iconos de motores
+
+#### Scenario: Cambiar motor con el selector
+
+- **WHEN** se elige otro motor en el selector
+- **THEN** ese motor pasa a ser el activo para las siguientes búsquedas
 
 ### Requirement: Sugerencias de autocompletado
 

@@ -36,7 +36,7 @@ El sistema SHALL devolver solo los grupos del usuario autenticado, ordenados por
 
 ### Requirement: Renombrar y reordenar grupos
 
-El sistema SHALL permitir renombrar un grupo propio y cambiar su posición, reasignando el orden de los grupos afectados sin huecos ni duplicados, tanto por arrastre como por botones.
+El sistema SHALL permitir renombrar un grupo propio y cambiar su posición, reasignando el orden de los grupos afectados sin huecos ni duplicados; en la web el reordenado es solo por arrastre (ratón y táctil), sin botones de subir/bajar.
 
 #### Scenario: Renombrar grupo propio
 
@@ -52,6 +52,11 @@ El sistema SHALL permitir renombrar un grupo propio y cambiar su posición, reas
 
 - **WHEN** un usuario arrastra un grupo a otra posición
 - **THEN** la web muestra un indicador visual del destino y, al soltar, el sistema guarda el orden contiguo resultante
+
+#### Scenario: Sin botones de orden
+
+- **WHEN** se ve un grupo en `/gestion`
+- **THEN** no hay botones de subir ni bajar; el grupo se reordena arrastrándolo desde su asa
 
 #### Scenario: Grupo ajeno o inexistente
 
