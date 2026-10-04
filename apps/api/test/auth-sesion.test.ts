@@ -56,3 +56,30 @@ describe("POST /api/v1/auth/logout y GET /api/v1/auth/yo", () => {
     });
   });
 });
+
+describe("Caducidad de la cookie de refresco", () => {
+  it("la cookie dura JWT_REFRESH_TTL completo (30d por defecto), no una fracción", async () => {
+    ctx = createTestApp();
+    await request(ctx.app)
+      .post("/api/v1/auth/registro")
+      .send({ email: "cookie@ejemplo.com", password: "secreta123" })
+      .expect(201);
+    const login = await request(ctx.app)
+      .post("/api/v1/auth/login")
+      .send({ email: "cookie@ejemplo.com", password: "secreta123" })
+      .expect(200);
+
+    const cookies = login.headers["set-cookie"] as unknown as string[];
+    const cookie = cookies.find((c) => c.startsWith("tolocha-refresh="));
+    expect(cookie).toBeDefined();
+
+    const maxAge = Number(/Max-Age=(\d+)/.exec(cookie!)?.[1]);
+    expect(maxAge).toBe(ctx.config.jwtRefreshTtlMs / 1000);
+    expect(maxAge).toBe(30 * 24 * 60 * 60);
+
+    const expires = Date.parse(/Expires=([^;]+)/.exec(cookie!)?.[1] ?? "");
+    const dias = (expires - Date.now()) / 86_400_000;
+    expect(dias).toBeGreaterThan(29);
+    expect(dias).toBeLessThan(31);
+  });
+});

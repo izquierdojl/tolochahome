@@ -9,7 +9,7 @@ export function setRefreshCookie(res: Response, token: string, ttlMs: number, se
     secure,
     sameSite: "lax",
     path: COOKIE_PATH,
-    maxAge: Math.floor(ttlMs / 1000),
+    maxAge: ttlMs,
   });
 }
 

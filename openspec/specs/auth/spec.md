@@ -113,3 +113,17 @@ El sistema SHALL exigir sesión válida en todas las rutas de datos y de gestió
 
 - **WHEN** se visita una página protegida sin sesión válida
 - **THEN** la web redirige a `/login` conservando la intención de destino cuando sea posible
+
+### Requirement: Persistencia de la cookie de renovación
+
+La cookie `tolocha-refresh` SHALL conservar su vigencia en el navegador durante toda la vida del token de renovación (`JWT_REFRESH_TTL`), de modo que la sesión se mantenga al volver a la startpage tras periodos de inactividad, mientras el token siga vigente y no se haya cerrado sesión.
+
+#### Scenario: Vuelta tras inactividad
+
+- **WHEN** una persona con sesión iniciada vuelve a la startpage tras un periodo de inactividad inferior a `JWT_REFRESH_TTL`
+- **THEN** la web renueva el acceso con la cookie y muestra la sesión sin pedir credenciales
+
+#### Scenario: Caducidad de la cookie acorde al TTL
+
+- **WHEN** la API emite o rota la cookie de renovación
+- **THEN** la cabecera `Set-Cookie` incluye una caducidad (`Max-Age`/`Expires`) equivalente a `JWT_REFRESH_TTL`, no una fracción de ella
