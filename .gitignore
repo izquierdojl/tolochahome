@@ -5,6 +5,7 @@ data/*.db-*
 .env
 apps/api/dist/
 apps/web/dist/
+apps/api/data/
 openspec/changes/*/
 !openspec/changes/.gitkeep
 coverage/
