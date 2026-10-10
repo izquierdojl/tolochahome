@@ -10,7 +10,7 @@ export function leerApertura(): Apertura {
   return localStorage.getItem(CLAVE_APERTURA) === "misma" ? "misma" : "nueva";
 }
 
-export type TamanoEnlace = "xs" | "s" | "m" | "l" | "xl";
+export type TamanoEnlace = "xxs" | "xs" | "s" | "m" | "l" | "xl";
 const CLAVE_TAMANO = "tolochahome-tamano-enlaces";
 
 export type ModoEnlace = "carpetas" | "listas";
@@ -36,6 +36,7 @@ export function guardarDisposicion(v: DisposicionGrupos): void {
 }
 
 export const TAMANOS_ENLACE: { valor: TamanoEnlace; etiqueta: string }[] = [
+  { valor: "xxs", etiqueta: "Diminuto" },
   { valor: "xs", etiqueta: "Muy pequeño" },
   { valor: "s", etiqueta: "Pequeño" },
   { valor: "m", etiqueta: "Mediano" },
@@ -45,7 +46,7 @@ export const TAMANOS_ENLACE: { valor: TamanoEnlace; etiqueta: string }[] = [
 
 export function leerTamano(): TamanoEnlace {
   const v = localStorage.getItem(CLAVE_TAMANO);
-  return v === "xs" || v === "s" || v === "m" || v === "l" || v === "xl" ? v : "m";
+  return v === "xxs" || v === "xs" || v === "s" || v === "m" || v === "l" || v === "xl" ? v : "m";
 }
 
 export function guardarTamano(v: TamanoEnlace): void {
@@ -54,6 +55,7 @@ export function guardarTamano(v: TamanoEnlace): void {
 
 /** Anchura del mosaico y altura de la imagen por nivel (`m` = tamaño actual). */
 const CLASES_TAMANO: Record<TamanoEnlace, { caja: string; imagen: string }> = {
+  xxs: { caja: "w-16", imagen: "h-12" },
   xs: { caja: "w-20", imagen: "h-14" },
   s: { caja: "w-24", imagen: "h-16" },
   m: { caja: "w-28", imagen: "h-20" },
