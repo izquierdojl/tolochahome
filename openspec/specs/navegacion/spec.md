@@ -139,9 +139,91 @@ La web SHALL ofrecer en `/config` el ajuste «Presentación de enlaces» con dos
 - **WHEN** se recarga la app o se vuelve a entrar con el mismo navegador
 - **THEN** la portada mantiene el último modo elegido (carpetas si nunca se eligió)
 
+### Requirement: Disposición de grupos en la portada
+
+La web SHALL ofrecer en `/config` el ajuste «Disposición de grupos» con dos valores, «Secciones» y «Barra», con secciones por defecto; la elección SHALL aplicarse a la portada `/`, persistir entre sesiones del mismo navegador y ser independiente de «Presentación de enlaces».
+
+#### Scenario: Cambiar a barra
+
+- **WHEN** se elige «Barra» en `/config`
+- **THEN** la portada muestra la barra de grupos con un solo grupo activo, sin recargar la página
+
+#### Scenario: Volver a secciones
+
+- **WHEN** se elige «Secciones» en `/config`
+- **THEN** la portada vuelve a mostrar los grupos como secciones apiladas con su plegado
+
+#### Scenario: Disposición persistente
+
+- **WHEN** se recarga la app o se vuelve a entrar con el mismo navegador
+- **THEN** la portada mantiene la última disposición elegida (secciones si nunca se eligió)
+
+#### Scenario: Combinable con la presentación
+
+- **WHEN** se está en disposición «Barra» y se cambia «Presentación de enlaces»
+- **THEN** los enlaces del grupo activo se muestran como mosaicos o filas según lo elegido
+
+### Requirement: Barra de grupos con grupo activo
+
+En la disposición «Barra», la portada SHALL mostrar bajo el buscador una barra horizontal con una pestaña por grupo, con el nombre y el color del grupo como acento de la pestaña activa y desplazamiento horizontal cuando no caben, y debajo solo los enlaces del grupo activo con su nombre, su contador y el control «abrir todos»; no SHALL mostrarse controles de plegado.
+
+#### Scenario: Un solo grupo a la vista
+
+- **WHEN** se elige un grupo en la barra
+- **THEN** debajo se muestran solo los enlaces de ese grupo, sin las secciones de los demás grupos
+
+#### Scenario: Pestaña con color de grupo
+
+- **WHEN** el grupo activo tiene color asignado
+- **THEN** su pestaña muestra ese color como acento en la barra
+
+#### Scenario: Barra desbordada
+
+- **WHEN** hay más grupos de los que caben en la barra
+- **THEN** se puede desplazar la barra en horizontal para ver y elegir todos
+
+#### Scenario: Sin controles de plegado
+
+- **WHEN** se ve la portada en disposición «Barra»
+- **THEN** no aparecen ni el plegado por grupo ni el control de plegado global
+
+#### Scenario: Grupo activo sin favoritos
+
+- **WHEN** el grupo activo no tiene favoritos
+- **THEN** se muestra el aviso de grupo vacío, como en la disposición de secciones
+
+### Requirement: Cambio de grupo en modo barra
+
+En la disposición «Barra», el usuario SHALL poder cambiar de grupo pinchando en su pestaña, arrastrando horizontalmente sobre el contenido en interfaces táctiles y con las flechas del teclado cuando la barra tiene el foco; al entrar en la portada SHALL mostrarse el último grupo visitado por el usuario, o el primero si ya no existe.
+
+#### Scenario: Cambio pinchando en la barra
+
+- **WHEN** se pulsa la pestaña de un grupo
+- **THEN** ese grupo pasa a ser el activo y debajo se muestran sus enlaces
+
+#### Scenario: Cambio por arrastre táctil (izquierda-derecha)
+
+- **WHEN** en una interfaz táctil el usuario arrastra sobre el contenido de izquierda a derecha (o al revés) más allá de un umbral
+- **THEN** cambia al grupo contiguo en la dirección del arrastre, sin abrir ningún enlace
+
+#### Scenario: Toque normal sobre un enlace
+
+- **WHEN** el gesto no supera el umbral de arrastre
+- **THEN** se trata como toque y el enlace se abre según la preferencia de apertura
+
+#### Scenario: Cambio por teclado
+
+- **WHEN** la barra tiene el foco y se pulsan las flechas izquierda o derecha
+- **THEN** el foco pasa a la pestaña contigua y ese grupo se muestra como activo
+
+#### Scenario: Grupo activo persistente
+
+- **WHEN** se vuelve a entrar en la portada con el mismo navegador
+- **THEN** se muestra el último grupo visitado por el usuario; si ese grupo ya no existe, se muestra el primero
+
 ### Requirement: Plegado y desplegado globales en la portada
 
-La portada `/` SHALL ofrecer un control de plegado global que plega o despliega de una vez todas las secciones de grupos, coherente con el plegado individual por grupo que se guarda por usuario; en modo listas el control no se muestra.
+La portada `/` SHALL ofrecer un control de plegado global que plega o despliega de una vez todas las secciones de grupos, coherente con el plegado individual por grupo que se guarda por usuario; en modo listas y en la disposición «Barra» el control no se muestra.
 
 #### Scenario: Plegar todo
 
@@ -161,4 +243,9 @@ La portada `/` SHALL ofrecer un control de plegado global que plega o despliega 
 #### Scenario: Sin control en modo listas
 
 - **WHEN** se ve la portada en modo listas
+- **THEN** no aparece el control de plegado global
+
+#### Scenario: Sin control en modo barra
+
+- **WHEN** se ve la portada en disposición «Barra»
 - **THEN** no aparece el control de plegado global

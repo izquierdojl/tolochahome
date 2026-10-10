@@ -45,10 +45,9 @@ Archivar = commitear TODO (código + specs) antes del merge; comprobar `git stat
 - **`version`**: al hacer merge/push a `dev` (salvo `chore(release):`),
   `scripts/determine-bump.js` decide `major|minor|patch` desde los commits
   y `node scripts/bump.js <bump>` crea commit `chore(release): vX.Y.Z` + tag.
-- **`release`**: con tag `v*` (o disparo manual con `tag`) publica en GHCR
-  `:vX.Y.Z`, `:vX.Y` y `:dev`; con push a `main` publica `:latest`.
-  `version.yml` lo dispara solo tras el bump (los push con `GITHUB_TOKEN`
-  no lanzan workflows).
+- **`release`**: publica en GHCR solo con push o PR a `main`. En push a `main`
+  publica `:latest`, `:vX.Y.Z` y `:vX.Y` (versión de `package.json`); en PR a
+  `main`, `:pr-<n>`. Desde `dev` ni por tags no se publica imagen.
 
 Reglas semver (`AGENTS.md` §8):
 
