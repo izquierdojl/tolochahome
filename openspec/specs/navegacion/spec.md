@@ -84,7 +84,7 @@ La web SHALL ofrecer `/config` (apertura misma/nueva pestaña, tamaño de enlace
 
 ### Requirement: Tamaño de enlaces
 
-La web SHALL ofrecer en `/config` el ajuste «Tamaño de enlaces» con cinco niveles (muy pequeño, pequeño, mediano, grande, muy grande), con mediano por defecto; la elección SHALL aplicarse a los mosaicos del speed dial en `/` y persistir entre sesiones del mismo navegador.
+La web SHALL ofrecer en `/config` el ajuste «Tamaño de enlaces» con seis niveles (diminuto, muy pequeño, pequeño, mediano, grande, muy grande), siendo «diminuto» el más pequeño de todos y «mediano» el valor por defecto; la elección SHALL aplicarse a los mosaicos del speed dial en `/` y persistir entre sesiones del mismo navegador.
 
 #### Scenario: Cambiar tamaño
 
@@ -95,6 +95,11 @@ La web SHALL ofrecer en `/config` el ajuste «Tamaño de enlaces» con cinco niv
 
 - **WHEN** se recarga la app o se vuelve a entrar con el mismo navegador
 - **THEN** los mosaicos mantienen el último tamaño elegido (mediano si nunca se eligió)
+
+#### Scenario: Nivel diminuto
+
+- **WHEN** se elige «Diminuto» en `/config`
+- **THEN** los mosaicos se muestran más pequeños que en «Muy pequeño», caben más por fila en pantallas de móvil estrechas sin scroll horizontal, y los objetivos táctiles siguen midiendo al menos 44 px
 
 ### Requirement: Versión en salud
 
