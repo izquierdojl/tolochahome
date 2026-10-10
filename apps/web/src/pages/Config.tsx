@@ -4,7 +4,7 @@ import { esApiError } from "../lib/api.js";
 import { useAuthStore } from "../stores/auth.js";
 import { IconoConfig } from "../components/Iconos.js";
 import { GestionCiudades } from "../components/GestionCiudades.js";
-import { leerApertura, leerTamano, guardarTamano, leerModo, guardarModo, TAMANOS_ENLACE, type Apertura, type TamanoEnlace, type ModoEnlace } from "../components/MosaicoFavorito.js";
+import { leerApertura, leerTamano, guardarTamano, leerModo, guardarModo, leerDisposicion, guardarDisposicion, TAMANOS_ENLACE, type Apertura, type TamanoEnlace, type ModoEnlace, type DisposicionGrupos } from "../components/MosaicoFavorito.js";
 
 interface Salud {
   ok: boolean;
@@ -123,6 +123,7 @@ export function Config() {
   const [apertura, setApertura] = useState<Apertura>(() => leerApertura());
   const [tamano, setTamano] = useState<TamanoEnlace>(() => leerTamano());
   const [modo, setModo] = useState<ModoEnlace>(() => leerModo());
+  const [disposicion, setDisposicion] = useState<DisposicionGrupos>(() => leerDisposicion());
   const salud = useQuery({
     queryKey: ["salud"],
     queryFn: () => fetch("/api/v1/health").then((r) => r.json() as Promise<Salud>),
@@ -141,6 +142,11 @@ export function Config() {
   function cambiarModo(v: ModoEnlace) {
     setModo(v);
     guardarModo(v);
+  }
+
+  function cambiarDisposicion(v: DisposicionGrupos) {
+    setDisposicion(v);
+    guardarDisposicion(v);
   }
 
   return (
@@ -201,6 +207,28 @@ export function Config() {
             </button>
           ))}
         </div>
+      </section>
+      <section className="space-y-2 rounded border border-line p-4">
+        <h2 className="font-bold">Disposición de grupos</h2>
+        <div className="flex gap-2" role="group" aria-label="Disposición de grupos">
+          {(["secciones", "barra"] as DisposicionGrupos[]).map((v) => (
+            <button
+              key={v}
+              type="button"
+              aria-pressed={disposicion === v}
+              onClick={() => cambiarDisposicion(v)}
+              className={`min-h-[44px] flex-1 rounded border px-3 ${
+                disposicion === v ? "border-brand font-bold text-brand" : "border-line text-muted"
+              }`}
+            >
+              {v === "secciones" ? "Secciones" : "Barra"}
+            </button>
+          ))}
+        </div>
+        <p className="text-sm text-muted">
+          Secciones apila todos los grupos; Barra muestra los grupos arriba y solo los enlaces del
+          grupo activo debajo.
+        </p>
       </section>
       <GestionCiudades />
       <section className="space-y-2 rounded border border-line p-4">

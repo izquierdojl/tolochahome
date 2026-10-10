@@ -24,6 +24,17 @@ export function guardarModo(v: ModoEnlace): void {
   localStorage.setItem(CLAVE_MODO, v);
 }
 
+export type DisposicionGrupos = "secciones" | "barra";
+const CLAVE_DISPOSICION = "tolochahome-disposicion-grupos";
+
+export function leerDisposicion(): DisposicionGrupos {
+  return localStorage.getItem(CLAVE_DISPOSICION) === "barra" ? "barra" : "secciones";
+}
+
+export function guardarDisposicion(v: DisposicionGrupos): void {
+  localStorage.setItem(CLAVE_DISPOSICION, v);
+}
+
 export const TAMANOS_ENLACE: { valor: TamanoEnlace; etiqueta: string }[] = [
   { valor: "xs", etiqueta: "Muy pequeño" },
   { valor: "s", etiqueta: "Pequeño" },

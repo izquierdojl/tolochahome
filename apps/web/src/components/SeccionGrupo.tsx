@@ -65,17 +65,20 @@ function BotonAbrirTodos({
 export function SeccionGrupo({
   grupo,
   modo,
-  plegado,
+  plegado = false,
   alternarPlegado,
+  variante = "seccion",
 }: {
   grupo: Grupo;
   modo: ModoEnlace;
-  plegado: boolean;
-  alternarPlegado: () => void;
+  plegado?: boolean;
+  alternarPlegado?: () => void;
+  variante?: "seccion" | "barra";
 }) {
   const favoritos = useBookmarks(grupo.id);
   const apertura = leerApertura();
   const listas = modo === "listas";
+  const barra = variante === "barra";
   const [aviso, setAviso] = useState<string | null>(null);
 
   function abrirTodos() {
@@ -99,6 +102,8 @@ export function SeccionGrupo({
   return (
     <section
       aria-label={grupo.nombre}
+      id={barra ? "panel-grupo-activo" : undefined}
+      role={barra ? "tabpanel" : undefined}
       style={{
         borderLeftColor: grupo.color ?? undefined,
         borderLeftWidth: grupo.color ? 4 : undefined,
@@ -106,15 +111,21 @@ export function SeccionGrupo({
       className="rounded border border-line p-4"
     >
       <div className="flex min-h-[44px] w-full items-center gap-1">
-        <button
-          type="button"
-          onClick={alternarPlegado}
-          aria-expanded={!plegado}
-          className="flex min-h-[44px] flex-1 items-center gap-2 text-left"
-        >
-          <span className={`inline-block transition-transform ${plegado ? "-rotate-90" : ""}`}>▾</span>
-          <span className="flex-1 text-lg font-bold">{grupo.nombre}</span>
-        </button>
+        {barra ? (
+          <span className="flex min-h-[44px] flex-1 items-center gap-2">
+            <span className="flex-1 text-lg font-bold">{grupo.nombre}</span>
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={alternarPlegado}
+            aria-expanded={!plegado}
+            className="flex min-h-[44px] flex-1 items-center gap-2 text-left"
+          >
+            <span className={`inline-block transition-transform ${plegado ? "-rotate-90" : ""}`}>▾</span>
+            <span className="flex-1 text-lg font-bold">{grupo.nombre}</span>
+          </button>
+        )}
         <BotonAbrirTodos grupo={grupo} favoritos={favoritos.data} pendiente={favoritos.isPending} onAbrir={abrirTodos} />
       </div>
       {aviso && (
@@ -123,7 +134,11 @@ export function SeccionGrupo({
         </p>
       )}
       <div
-        className={`grid transition-[grid-template-rows] duration-300 ${plegado ? "grid-rows-[0fr]" : "grid-rows-[1fr]"}`}
+        className={
+          barra
+            ? "grid grid-rows-[1fr]"
+            : `grid transition-[grid-template-rows] duration-300 ${plegado ? "grid-rows-[0fr]" : "grid-rows-[1fr]"}`
+        }
       >
         <div className="overflow-hidden">
           <div className={listas ? "mt-2 space-y-0.5" : "mt-3 flex flex-wrap gap-3"}>
