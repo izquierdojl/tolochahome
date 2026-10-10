@@ -1,21 +1,15 @@
 name: release
 
-# - Tag v* empujado a mano → publica :vX.Y.Z y :dev.
-# - version.yml (tras bump automático) lo dispara vía workflow_dispatch,
-#   porque los push con GITHUB_TOKEN no lanzan workflows.
-# - Push a main (promoción dev→main) → publica :latest.
+# Publica la imagen en GHCR solo con push o PR a main (nada de builds desde dev):
+# - Push a main (merge dev→main) → :latest, :vX.Y.Z y :vX.Y (versión de package.json).
+# - PR a main → :pr-<n>, para probar la imagen antes de fusionar.
 on:
   push:
-    tags:
-      - "v*"
     branches:
       - "main"
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: "Tag vX.Y.Z a publicar"
-        required: true
-        type: string
+  pull_request:
+    branches:
+      - "main"
 
 permissions:
   contents: read
@@ -28,27 +22,18 @@ env:
 jobs:
   release:
     runs-on: ubuntu-latest
+    # Un PR desde un fork no tiene permisos de paquetes: solo se publica si viene del mismo repo.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.tag || github.ref }}
-          fetch-depth: 0
-          fetch-tags: true
       - id: tags
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            TAG="${{ inputs.tag }}"
-          elif [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-            TAG="${GITHUB_REF#refs/tags/}"
-          else
-            TAG=""
-          fi
           BASE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
-          if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
-            echo "list=${BASE}:latest" >> "$GITHUB_OUTPUT"
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "list=${BASE}:pr-${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
           else
-            V="${TAG#v}"
-            echo "list=${BASE}:${V},${BASE}:${V%.*},${BASE}:dev" >> "$GITHUB_OUTPUT"
+            V="$(jq -r .version package.json)"
+            echo "list=${BASE}:latest,${BASE}:v${V},${BASE}:v${V%.*}" >> "$GITHUB_OUTPUT"
           fi
           echo "Tags: $(grep '^list=' "$GITHUB_OUTPUT" | cut -d= -f2-)"
       - name: Set up BuildKit

@@ -116,8 +116,10 @@ Formato semver `X.Y.Z`. Automático con cada PR fusionado en `dev`:
 - `infra`/`docs`/`refactor`/`test`/`chore` → `patch` salvo `BREAKING`.
 - Flujo: merge a `dev` → `version.yml` analiza commits desde el último tag →
   `node scripts/bump.js <bump>` (sincroniza versión en root + workspaces,
-  commit `chore(release): vX.Y.Z`, tag `vX.Y.Z`) → `release.yml` construye y publica imágenes.
-- GHCR: cada merge a `dev` publica `:vX.Y.Z` y `:dev`; merge `dev`→`main` promueve `:latest`.
+  commit `chore(release): vX.Y.Z`, tag `vX.Y.Z`). Solo versionado, sin publicar imagen.
+- GHCR: la imagen se publica únicamente con push o PR a `main` — el merge `dev`→`main`
+  publica `:latest`, `:vX.Y.Z` y `:vX.Y` (versión de `package.json`); un PR a `main`
+  publica `:pr-<n>`.
 - Los skills de OpenSpec se regeneran con `openspec update`: las reglas de release viven aquí,
   en `AGENTS.md`, y se re-aplican a mano si un update las borra de algún skill.
 

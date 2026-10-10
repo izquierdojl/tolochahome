@@ -4,7 +4,8 @@
 
 ## Imagen publicada en GHCR (recomendado)
 
-Cada merge a `dev` publica `:vX.Y.Z` y `:dev`; el merge `dev`→`main` promueve `:latest`
+La imagen se publica en GHCR solo al hacer push o PR a `main`: el merge `dev`→`main`
+publica `:latest` (y `:vX.Y.Z`), y cada PR a `main` publica `:pr-<n>`
 (ver [desarrollo](desarrollo.md)).
 
 ```bash
