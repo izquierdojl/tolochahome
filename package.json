@@ -1,6 +1,6 @@
 {
   "name": "tolochahome",
-  "version": "0.9.1",
+  "version": "0.10.0",
   "private": true,
   "description": "Startpage autoalojada por usuario: grupos y favoritos speed-dial, búsqueda directa, claro/oscuro",
   "workspaces": [
