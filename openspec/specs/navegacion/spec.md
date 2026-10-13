@@ -254,3 +254,41 @@ La portada `/` SHALL ofrecer un control de plegado global que plega o despliega 
 
 - **WHEN** se ve la portada en disposición «Barra»
 - **THEN** no aparece el control de plegado global
+
+### Requirement: Arrastre visual del contenido del grupo en modo barra
+
+En la disposición «Barra», mientras se arrastra el dedo en horizontal sobre el contenido del grupo activo, el contenido SHALL desplazarse acompañando al gesto; si se suelta sin superar el umbral de cambio, SHALL volver a su posición y el gesto SHALL tratarse como un toque normal.
+
+#### Scenario: El contenido sigue al dedo
+
+- **WHEN** en una interfaz táctil el usuario arrastra el dedo en horizontal sobre el contenido del grupo activo
+- **THEN** el contenido se desplaza en la misma dirección y proporción que el gesto, dando feedback continuo antes de soltar
+
+#### Scenario: Vuelta a su sitio sin cambio
+
+- **WHEN** el usuario suelta el dedo sin superar el umbral de cambio
+- **THEN** el contenido vuelve a su posición con una transición breve, no cambia de grupo y el gesto se trata como toque normal
+
+#### Scenario: Resistencia en los extremos
+
+- **WHEN** el grupo activo es el primero o el último y se arrastra hacia el lado sin grupo contiguo
+- **THEN** el contenido ofrece resistencia y no revela ningún grupo fuera de la lista
+
+### Requirement: Transición al cambiar de grupo en modo barra
+
+En la disposición «Barra», todo cambio de grupo (por arrastre superando el umbral o al pulsar una pestaña) SHALL mostrarse con una transición de deslizamiento en la dirección del grupo destino, en lugar de un cambio instantáneo; con `prefers-reduced-motion` activo el cambio SHALL ser inmediato o con una transición mínima, sin seguimiento del dedo.
+
+#### Scenario: Transición al soltar el arrastre
+
+- **WHEN** el usuario suelta el dedo habiendo superado el umbral de arrastre
+- **THEN** el contenido completa el deslizamiento hacia el grupo contiguo con una transición suave y se muestra el grupo destino
+
+#### Scenario: Transición al pulsar una pestaña
+
+- **WHEN** el usuario pulsa la pestaña de otro grupo en la barra
+- **THEN** el contenido cambia al grupo elegido con la misma transición de deslizamiento, en la dirección del orden de los grupos
+
+#### Scenario: Movimiento reducido
+
+- **WHEN** el sistema tiene activada la preferencia de movimiento reducido
+- **THEN** el cambio de grupo no muestra seguimiento del dedo ni animación de deslizamiento, sino un cambio inmediato o con transición mínima

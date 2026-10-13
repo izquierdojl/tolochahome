@@ -108,3 +108,17 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
+
+/* Duración del deslizamiento entre grupos; la fija Home.tsx (DURACION_DESLIZAMIENTO). */
+:root {
+  --dur-deslizamiento: 200ms;
+}
+
+/* El deslizamiento entre grupos se desactiva con movimiento reducido. */
+@media (prefers-reduced-motion: reduce) {
+  .deslizamiento-grupo,
+  .deslizamiento-grupo * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
