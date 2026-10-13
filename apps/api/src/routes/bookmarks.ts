@@ -4,7 +4,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import multer from "multer";
 import { z } from "zod";
-import { and, eq } from "drizzle-orm";
+import { and, asc, desc, eq, gt } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { bookmarks, groups } from "../db/schema.js";
 import type { AppConfig } from "../config/env.js";
@@ -45,6 +45,9 @@ const tituloSchema = z
   .trim()
   .min(1, "El título es obligatorio")
   .max(150, "El título no puede superar los 150 caracteres");
+
+/** Nº máximo de enlaces que devuelve la vista derivada de frecuentes. */
+const LIMITE_FRECUENTES = 12;
 
 export interface FavoritoVista {
   id: string;
@@ -106,6 +109,24 @@ export function createBookmarksRouter({ db, config }: BookmarksDeps): Router {
             : and(eq(bookmarks.userId, userId), eq(bookmarks.groupId, filtro)),
         )
         .orderBy(bookmarks.orden)
+        .all();
+      res.json({ favoritos: filas.map(aVista) });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Vista derivada (no hay tabla ni grupo «Frecuentes»): los favoritos propios
+  // más abiertos, ordenados por visitas y acotados. Se registra antes de `/:id`.
+  router.get("/frecuentes", auth, (req: AuthRequest, res, next) => {
+    try {
+      const userId = req.auth!.userId;
+      const filas = db
+        .select()
+        .from(bookmarks)
+        .where(and(eq(bookmarks.userId, userId), gt(bookmarks.visitas, 0)))
+        .orderBy(desc(bookmarks.visitas), asc(bookmarks.orden), asc(bookmarks.titulo))
+        .limit(LIMITE_FRECUENTES)
         .all();
       res.json({ favoritos: filas.map(aVista) });
     } catch (err) {

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Grupo } from "../hooks/useGroups.js";
 import type { Favorito } from "../hooks/useBookmarks.js";
-import { useBookmarks, useRegistrarVisita } from "../hooks/useBookmarks.js";
+import { useBookmarks, useFrecuentes, useRegistrarVisita } from "../hooks/useBookmarks.js";
 import { MosaicoFavorito, leerApertura, type ModoEnlace, type Apertura } from "../components/MosaicoFavorito.js";
 import { ImagenFavorito, dominioDe } from "../components/ImagenFavorito.js";
 import { IconoAbrirTodos } from "./Iconos.js";
@@ -58,6 +58,39 @@ function BotonAbrirTodos({
       <span>({grupo.favoritos})</span>
       <IconoAbrirTodos width={16} height={16} />
     </button>
+  );
+}
+
+/** Cuerpo de una sección: mosaicos o filas en solo lectura, con su estado vacío. */
+function ListaFavoritos({
+  favoritos,
+  listas,
+  apertura,
+  vacio,
+}: {
+  favoritos: Favorito[] | undefined;
+  listas: boolean;
+  apertura: Apertura;
+  vacio: string;
+}) {
+  return (
+    <div className={listas ? "mt-2 space-y-0.5" : "mt-3 flex flex-wrap gap-3"}>
+      {favoritos?.map((f) =>
+        listas ? (
+          <FilaFavorito key={f.id} favorito={f} apertura={apertura} />
+        ) : (
+          <MosaicoFavorito
+            key={f.id}
+            favorito={f}
+            apertura={apertura}
+            onEditar={() => undefined}
+            onBorrar={() => undefined}
+            soloLectura
+          />
+        ),
+      )}
+      {favoritos?.length === 0 && <p className="text-sm text-muted">{vacio}</p>}
+    </div>
   );
 }
 
@@ -141,25 +174,76 @@ export function SeccionGrupo({
         }
       >
         <div className="overflow-hidden">
-          <div className={listas ? "mt-2 space-y-0.5" : "mt-3 flex flex-wrap gap-3"}>
-            {favoritos.data?.map((f) =>
-              listas ? (
-                <FilaFavorito key={f.id} favorito={f} apertura={apertura} />
-              ) : (
-                <MosaicoFavorito
-                  key={f.id}
-                  favorito={f}
-                  apertura={apertura}
-                  onEditar={() => undefined}
-                  onBorrar={() => undefined}
-                  soloLectura
-                />
-              ),
-            )}
-            {favoritos.data?.length === 0 && (
-              <p className="text-sm text-muted">Sin favoritos todavía.</p>
-            )}
-          </div>
+          <ListaFavoritos
+            favoritos={favoritos.data}
+            listas={listas}
+            apertura={apertura}
+            vacio="Sin favoritos todavía."
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** Sección «Frecuentes»: vista derivada por visitas, de solo lectura y sin «Abrir todos». */
+export function SeccionFrecuentes({
+  modo,
+  plegado = false,
+  alternarPlegado,
+  variante = "seccion",
+}: {
+  modo: ModoEnlace;
+  plegado?: boolean;
+  alternarPlegado?: () => void;
+  variante?: "seccion" | "barra";
+}) {
+  const frecuentes = useFrecuentes();
+  const apertura = leerApertura();
+  const listas = modo === "listas";
+  const barra = variante === "barra";
+  const total = frecuentes.data?.length ?? 0;
+
+  return (
+    <section
+      aria-label="Frecuentes"
+      id={barra ? "panel-grupo-activo" : undefined}
+      role={barra ? "tabpanel" : undefined}
+      className="rounded border border-line p-4"
+    >
+      <div className="flex min-h-[44px] w-full items-center gap-1">
+        {barra ? (
+          <span className="flex min-h-[44px] flex-1 items-center gap-2">
+            <span className="flex-1 text-lg font-bold">Frecuentes</span>
+            <span className="text-sm text-muted">({total})</span>
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={alternarPlegado}
+            aria-expanded={!plegado}
+            className="flex min-h-[44px] flex-1 items-center gap-2 text-left"
+          >
+            <span className={`inline-block transition-transform ${plegado ? "-rotate-90" : ""}`}>▾</span>
+            <span className="flex-1 text-lg font-bold">Frecuentes</span>
+            <span className="text-sm text-muted">({total})</span>
+          </button>
+        )}
+      </div>
+      <div
+        className={
+          barra
+            ? "grid grid-rows-[1fr]"
+            : `grid transition-[grid-template-rows] duration-300 ${plegado ? "grid-rows-[0fr]" : "grid-rows-[1fr]"}`
+        }
+      >
+        <div className="overflow-hidden">
+          <ListaFavoritos
+            favoritos={frecuentes.data}
+            listas={listas}
+            apertura={apertura}
+            vacio="Aún no hay enlaces frecuentes."
+          />
         </div>
       </div>
     </section>

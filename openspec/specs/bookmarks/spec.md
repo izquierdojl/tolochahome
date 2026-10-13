@@ -155,3 +155,32 @@ La web SHALL mostrar en `/` los grupos con sus mosaicos (favicon del sitio o let
 
 - **WHEN** se visita `/` sin sesión válida
 - **THEN** la web muestra la bienvenida sin mosaicos ni gestión
+
+### Requirement: Enlaces frecuentes
+
+El sistema SHALL ofrecer al usuario autenticado una vista de sus enlaces frecuentes: sus propios favoritos con `visitas > 0`, ordenados por número de visitas descendente (desempate por `orden` ascendente y luego título) y limitados a 12; la vista SHALL ser de solo lectura y quedar aislada por usuario.
+
+#### Scenario: Orden por uso
+
+- **WHEN** un usuario pide sus enlaces frecuentes y tiene favoritos con visitas
+- **THEN** recibe hasta 12 favoritos propios con `visitas > 0`, de más a menos visitado, y a igual número por `orden` y título
+
+#### Scenario: Sin clics
+
+- **WHEN** el usuario no tiene ningún favorito con visitas
+- **THEN** la vista devuelve una lista vacía
+
+#### Scenario: Aislado por usuario
+
+- **WHEN** un usuario pide sus enlaces frecuentes
+- **THEN** nunca se incluyen favoritos de otros usuarios
+
+#### Scenario: Sin sesión
+
+- **WHEN** se piden los enlaces frecuentes sin sesión válida
+- **THEN** el sistema responde `401`
+
+#### Scenario: Refleja el estado actual
+
+- **WHEN** un favorito o su grupo se borra, o el favorito acumula visitas
+- **THEN** la vista refleja el cambio en la siguiente consulta, sin datos duplicados ni sincronización aparte

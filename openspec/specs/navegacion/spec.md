@@ -292,3 +292,37 @@ En la disposición «Barra», todo cambio de grupo (por arrastre superando el um
 
 - **WHEN** el sistema tiene activada la preferencia de movimiento reducido
 - **THEN** el cambio de grupo no muestra seguimiento del dedo ni animación de deslizamiento, sino un cambio inmediato o con transición mínima
+
+### Requirement: Sección Frecuentes en la portada
+
+La portada `/` SHALL mostrar siempre, como primera sección (y primera pestaña en la disposición «Barra»), una sección «Frecuentes» con los enlaces más abiertos del usuario, en solo lectura y respetando el modo de presentación («Carpetas» en mosaicos, «Listas» en filas); SHALL ser plegable como cualquier sección y, sin clics, SHALL mostrar su estado vacío.
+
+#### Scenario: Primera sección
+
+- **WHEN** un usuario autenticado entra en la portada en disposición de secciones
+- **THEN** «Frecuentes» aparece la primera, antes de sus grupos
+
+#### Scenario: Primera pestaña en barra
+
+- **WHEN** la portada está en disposición «Barra»
+- **THEN** «Frecuentes» es la primera pestaña y, al seleccionarla, se muestran sus enlaces
+
+#### Scenario: Modo de presentación
+
+- **WHEN** el modo de presentación es «Carpetas»
+- **THEN** «Frecuentes» usa mosaicos, y con «Listas» usa filas, igual que un grupo
+
+#### Scenario: Plegable
+
+- **WHEN** el usuario pliega «Frecuentes» y recarga la portada
+- **THEN** sigue plegada mostrando su cabecera y conteo
+
+#### Scenario: Solo lectura
+
+- **WHEN** se ve la sección «Frecuentes»
+- **THEN** no ofrece editar, mover, borrar ni «Abrir todos» los enlaces; solo abrirlos, registrando la visita
+
+#### Scenario: Estado vacío
+
+- **WHEN** el usuario todavía no ha abierto ningún enlace
+- **THEN** «Frecuentes» muestra su estado vacío como sección, sin enlaces
