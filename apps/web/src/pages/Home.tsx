@@ -1,12 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../stores/auth.js";
-import { useGroups } from "../hooks/useGroups.js";
+import { useGroups, type Grupo } from "../hooks/useGroups.js";
 import { useMotores } from "../hooks/useBusqueda.js";
 import { usePlegados } from "../hooks/usePlegados.js";
 import { BarraBusqueda } from "../components/BarraBusqueda.js";
 import { BarraGrupos } from "../components/BarraGrupos.js";
-import { SeccionGrupo } from "../components/SeccionGrupo.js";
+import { SeccionFrecuentes, SeccionGrupo } from "../components/SeccionGrupo.js";
 import {
   leerDisposicion,
   leerModo,
@@ -30,6 +30,18 @@ const DURACION_DESLIZAMIENTO = 200;
 
 /** Factor de resistencia al arrastrar hacia un extremo sin grupo contiguo. */
 const RESISTENCIA_EXTREMO = 0.35;
+
+/** Id reservado de la sección «Frecuentes»: no colisiona con el UUID de un grupo. */
+const ID_FRECUENTES = "__frecuentes";
+
+/** Pestaña sintética de «Frecuentes» para la barra de grupos. */
+const PESTANA_FRECUENTES: Grupo = {
+  id: ID_FRECUENTES,
+  nombre: "Frecuentes",
+  orden: -1,
+  favoritos: 0,
+  color: null,
+};
 
 /** ¿El sistema pide movimiento reducido? */
 function prefiereMovimientoReducido(): boolean {
@@ -88,7 +100,8 @@ export function Home() {
     usuario ? leerBusquedaVisible(usuario.id) : true,
   );
   const idsGrupos = (grupos.data ?? []).map((g) => g.id);
-  const plegados = usePlegados(usuario?.id ?? "", idsGrupos);
+  const idsSecciones = [ID_FRECUENTES, ...idsGrupos];
+  const plegados = usePlegados(usuario?.id ?? "", idsSecciones);
   // La portada monta antes de restaurar la sesión: ajusta el grupo activo al aparecer el usuario.
   const [activo, setActivo] = useState<{ userId: string; id: string | null }>(() => ({
     userId: usuario?.id ?? "",
@@ -178,9 +191,10 @@ export function Home() {
   const enCarpetas = modo === "carpetas";
   const enBarra = disposicion === "barra";
   const listaGrupos = grupos.data ?? [];
-  const grupoActivo = listaGrupos.find((g) => g.id === activo.id) ?? listaGrupos[0];
+  const pestanas = [PESTANA_FRECUENTES, ...listaGrupos];
+  const grupoActivo = pestanas.find((g) => g.id === activo.id) ?? pestanas[0];
   const hayBarra = (motores.data?.length ?? 0) > 0;
-  const conPlegado = enCarpetas && !enBarra && idsGrupos.length > 0;
+  const conPlegado = enCarpetas && !enBarra && idsSecciones.length > 0;
   const textoPlegado = plegados.todoPlegado
     ? "Desplegar todas las secciones"
     : "Plegar todas las secciones";
@@ -237,8 +251,8 @@ export function Home() {
       seleccionarGrupo(id);
       return;
     }
-    const i = listaGrupos.findIndex((g) => g.id === grupoActivo?.id);
-    const j = listaGrupos.findIndex((g) => g.id === id);
+    const i = pestanas.findIndex((g) => g.id === grupoActivo?.id);
+    const j = pestanas.findIndex((g) => g.id === id);
     if (i < 0 || j < 0 || i === j) {
       seleccionarGrupo(id);
       return;
@@ -268,8 +282,8 @@ export function Home() {
       if (Math.abs(dx) < UMBRAL_ARRASTRE_INICIO || Math.abs(dx) <= Math.abs(dy)) return;
       arrastrandoH.current = true;
     }
-    const i = listaGrupos.findIndex((g) => g.id === grupoActivo?.id);
-    const hayVecino = dx > 0 ? i > 0 : i < listaGrupos.length - 1;
+    const i = pestanas.findIndex((g) => g.id === grupoActivo?.id);
+    const hayVecino = dx > 0 ? i > 0 : i < pestanas.length - 1;
     fijarDesplazamiento(hayVecino ? dx : dx * RESISTENCIA_EXTREMO);
   }
 
@@ -283,10 +297,10 @@ export function Home() {
     const dx = t.clientX - inicio.x;
     const dy = t.clientY - inicio.y;
     const horizontal = Math.abs(dx) > Math.abs(dy);
-    if (listaGrupos.length >= 2 && horizontal && Math.abs(dx) >= UMBRAL_ARRASTRE) {
-      const i = listaGrupos.findIndex((g) => g.id === grupoActivo.id);
+    if (pestanas.length >= 2 && horizontal && Math.abs(dx) >= UMBRAL_ARRASTRE) {
+      const i = pestanas.findIndex((g) => g.id === grupoActivo.id);
       const j = dx > 0 ? i - 1 : i + 1;
-      const destino = j >= 0 && j < listaGrupos.length ? listaGrupos[j] : undefined;
+      const destino = j >= 0 && j < pestanas.length ? pestanas[j] : undefined;
       suprimirClick.current = true;
       if (i >= 0 && destino) {
         iniciarCambio(dx > 0 ? 1 : -1, destino.id);
@@ -351,9 +365,9 @@ export function Home() {
       {grupos.isPending && <p className="text-muted">Cargando…</p>}
       {enBarra ? (
         <>
-          {listaGrupos.length > 0 && (
+          {pestanas.length > 0 && (
             <BarraGrupos
-              grupos={listaGrupos}
+              grupos={pestanas}
               activoId={grupoActivo?.id}
               onSeleccionar={seleccionarGrupoAnimado}
             />
@@ -369,21 +383,32 @@ export function Home() {
               onClickCapture={capturarClick}
             >
               <div ref={panel} className="will-change-transform">
-                <SeccionGrupo key={grupoActivo.id} grupo={grupoActivo} modo={modo} variante="barra" />
+                {grupoActivo.id === ID_FRECUENTES ? (
+                  <SeccionFrecuentes key={ID_FRECUENTES} modo={modo} variante="barra" />
+                ) : (
+                  <SeccionGrupo key={grupoActivo.id} grupo={grupoActivo} modo={modo} variante="barra" />
+                )}
               </div>
             </div>
           )}
         </>
       ) : (
-        listaGrupos.map((g) => (
-          <SeccionGrupo
-            key={g.id}
-            grupo={g}
+        <>
+          <SeccionFrecuentes
             modo={modo}
-            plegado={plegados.plegados.has(g.id)}
-            alternarPlegado={() => plegados.alternar(g.id)}
+            plegado={plegados.plegados.has(ID_FRECUENTES)}
+            alternarPlegado={() => plegados.alternar(ID_FRECUENTES)}
           />
-        ))
+          {listaGrupos.map((g) => (
+            <SeccionGrupo
+              key={g.id}
+              grupo={g}
+              modo={modo}
+              plegado={plegados.plegados.has(g.id)}
+              alternarPlegado={() => plegados.alternar(g.id)}
+            />
+          ))}
+        </>
       )}
       {(grupos.data ?? []).length === 0 && !grupos.isPending && (
         <p className="text-center text-muted">

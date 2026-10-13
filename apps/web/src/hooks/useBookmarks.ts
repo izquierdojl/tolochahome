@@ -44,6 +44,19 @@ export function useBookmarks(groupId?: string) {
   });
 }
 
+export function useFrecuentes() {
+  const estado = useAuthStore((s) => s.estado);
+  return useQuery({
+    queryKey: ["frecuentes"],
+    enabled: estado === "autenticada",
+    queryFn: () =>
+      conSesion((token) =>
+        api<{ favoritos: Favorito[] }>("/api/v1/bookmarks/frecuentes", { token }),
+      ),
+    select: (res) => res.favoritos,
+  });
+}
+
 function useInvalidar() {
   const cliente = useQueryClient();
   return () => cliente.invalidateQueries({ queryKey: ["favoritos"] });

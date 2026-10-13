@@ -251,3 +251,92 @@ describe("DELETE /api/v1/bookmarks/:id y visitas", () => {
     expect(lista.body.favoritos).toHaveLength(0);
   });
 });
+
+async function visitar(token: string, id: string, veces = 1): Promise<void> {
+  for (let i = 0; i < veces; i += 1) {
+    const res = await request(ctx!.app)
+      .post(`/api/v1/bookmarks/${id}/visita`)
+      .set("Authorization", `Bearer ${token}`);
+    expect(res.status).toBe(200);
+  }
+}
+
+describe("GET /api/v1/bookmarks/frecuentes", () => {
+  it("ordena por visitas y desempata por orden y título", async () => {
+    ctx = createTestApp();
+    const token = await registrar(ctx.app, "fr@ejemplo.com");
+    const g1 = await crearGrupo(token, "G1");
+    const g2 = await crearGrupo(token, "G2");
+    const g3 = await crearGrupo(token, "G3");
+    const zeta = await crearFavorito(token, g1, "Zeta", "https://zeta.com");
+    const alfa = await crearFavorito(token, g2, "Alfa", "https://alfa.com");
+    const primero = await crearFavorito(token, g3, "Primero", "https://primero.com");
+    const segundo = await crearFavorito(token, g3, "Segundo", "https://segundo.com");
+    await visitar(token, zeta.id);
+    await visitar(token, alfa.id);
+    await visitar(token, primero.id, 2);
+    await visitar(token, segundo.id, 2);
+
+    const res = await request(ctx.app)
+      .get("/api/v1/bookmarks/frecuentes")
+      .set("Authorization", `Bearer ${token}`);
+    expect(res.status).toBe(200);
+    expect(res.body.favoritos.map((f: { titulo: string }) => f.titulo)).toEqual([
+      "Primero",
+      "Segundo",
+      "Alfa",
+      "Zeta",
+    ]);
+  });
+
+  it("excluye los favoritos sin visitas y devuelve lista vacía si no hay clics", async () => {
+    ctx = createTestApp();
+    const token = await registrar(ctx.app, "fv@ejemplo.com");
+    const grupo = await crearGrupo(token, "G");
+    await crearFavorito(token, grupo, "Nunca", "https://nunca.com");
+
+    const res = await request(ctx.app)
+      .get("/api/v1/bookmarks/frecuentes")
+      .set("Authorization", `Bearer ${token}`);
+    expect(res.status).toBe(200);
+    expect(res.body.favoritos).toEqual([]);
+  });
+
+  it("limita a 12 enlaces", async () => {
+    ctx = createTestApp();
+    const token = await registrar(ctx.app, "fl@ejemplo.com");
+    const grupo = await crearGrupo(token, "G");
+    for (let i = 0; i < 13; i += 1) {
+      const fav = await crearFavorito(token, grupo, `F${String(i).padStart(2, "0")}`, `https://f${i}.com`);
+      await visitar(token, fav.id);
+    }
+
+    const res = await request(ctx.app)
+      .get("/api/v1/bookmarks/frecuentes")
+      .set("Authorization", `Bearer ${token}`);
+    expect(res.status).toBe(200);
+    expect(res.body.favoritos).toHaveLength(12);
+    expect(res.body.favoritos[11].titulo).toBe("F11");
+  });
+
+  it("no mezcla frecuentes de otros usuarios", async () => {
+    ctx = createTestApp();
+    const tokenA = await registrar(ctx.app, "fra@ejemplo.com");
+    const tokenB = await registrar(ctx.app, "frb@ejemplo.com");
+    const favA = await crearFavorito(tokenA, await crearGrupo(tokenA, "GA"), "MioA", "https://a.com");
+    const favB = await crearFavorito(tokenB, await crearGrupo(tokenB, "GB"), "MioB", "https://b.com");
+    await visitar(tokenA, favA.id);
+    await visitar(tokenB, favB.id);
+
+    const res = await request(ctx.app)
+      .get("/api/v1/bookmarks/frecuentes")
+      .set("Authorization", `Bearer ${tokenA}`);
+    expect(res.body.favoritos.map((f: { titulo: string }) => f.titulo)).toEqual(["MioA"]);
+  });
+
+  it("sin sesión responde 401", async () => {
+    ctx = createTestApp();
+    const res = await request(ctx.app).get("/api/v1/bookmarks/frecuentes");
+    expect(res.status).toBe(401);
+  });
+});
