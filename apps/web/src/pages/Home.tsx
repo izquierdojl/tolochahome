@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../stores/auth.js";
 import { useGroups } from "../hooks/useGroups.js";
@@ -21,6 +21,24 @@ function claveBusqueda(userId: string): string {
 
 /** Desplazamiento horizontal mínimo (px) para que un arrastre táctil cambie de grupo. */
 const UMBRAL_ARRASTRE = 50;
+
+/** Desplazamiento horizontal (px) a partir del cual el gesto se considera arrastre y no toque. */
+const UMBRAL_ARRASTRE_INICIO = 8;
+
+/** Duración (ms) de las transiciones de deslizamiento; se publica en CSS como `--dur-deslizamiento`. */
+const DURACION_DESLIZAMIENTO = 200;
+
+/** Factor de resistencia al arrastrar hacia un extremo sin grupo contiguo. */
+const RESISTENCIA_EXTREMO = 0.35;
+
+/** ¿El sistema pide movimiento reducido? */
+function prefiereMovimientoReducido(): boolean {
+  try {
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  } catch {
+    return false;
+  }
+}
 
 function leerBusquedaVisible(userId: string): boolean {
   try {
@@ -80,7 +98,48 @@ export function Home() {
   if (activo.userId !== idUsuario) {
     setActivo({ userId: idUsuario, id: idUsuario ? leerGrupoActivo(idUsuario) : null });
   }
+  // Arrastre y transición entre grupos (disposición «Barra»). El desplazamiento
+  // se aplica al DOM sin re-renderizar para no repintar los favoritos en cada píxel.
+  const panel = useRef<HTMLDivElement>(null);
   const toque = useRef<{ x: number; y: number } | null>(null);
+  const arrastrandoH = useRef(false);
+  const suprimirClick = useRef(false);
+  const temporizador = useRef<number | null>(null);
+  const [fase, setFase] = useState<{ tipo: "reposo" | "saliendo" | "entrando"; signo: number }>({
+    tipo: "reposo",
+    signo: 1,
+  });
+
+  useEffect(() => {
+    document.documentElement.style.setProperty(
+      "--dur-deslizamiento",
+      `${DURACION_DESLIZAMIENTO}ms`,
+    );
+    return () => {
+      if (temporizador.current !== null) window.clearTimeout(temporizador.current);
+    };
+  }, []);
+
+  // Fases de la transición: el panel sale hacia un lado y el nuevo entra desde el contrario.
+  useLayoutEffect(() => {
+    const el = panel.current;
+    if (!el) return;
+    const ancho = el.offsetWidth || window.innerWidth;
+    if (fase.tipo === "saliendo") {
+      el.style.transition = `transform ${DURACION_DESLIZAMIENTO}ms ease-in`;
+      void el.offsetWidth;
+      el.style.transform = `translateX(${fase.signo * ancho}px)`;
+    } else if (fase.tipo === "entrando") {
+      el.style.transition = "none";
+      el.style.transform = `translateX(${-fase.signo * ancho}px)`;
+      void el.offsetWidth;
+      el.style.transition = `transform ${DURACION_DESLIZAMIENTO}ms ease-out`;
+      el.style.transform = "translateX(0px)";
+    } else {
+      el.style.transition = "";
+      el.style.transform = "";
+    }
+  }, [fase]);
 
   function seleccionarGrupo(id: string) {
     if (!usuario) return;
@@ -139,29 +198,117 @@ export function Home() {
     </button>
   );
 
+  function fijarDesplazamiento(px: number) {
+    const el = panel.current;
+    if (!el) return;
+    el.style.transition = "none";
+    el.style.transform = `translateX(${px}px)`;
+  }
+
+  function rebotar() {
+    const el = panel.current;
+    if (!el || !el.style.transform) return;
+    el.style.transition = `transform ${DURACION_DESLIZAMIENTO}ms ease-out`;
+    void el.offsetWidth;
+    el.style.transform = "translateX(0px)";
+  }
+
+  function iniciarCambio(signo: number, destinoId: string) {
+    if (prefiereMovimientoReducido()) {
+      seleccionarGrupo(destinoId);
+      return;
+    }
+    if (temporizador.current !== null) window.clearTimeout(temporizador.current);
+    setFase({ tipo: "saliendo", signo });
+    temporizador.current = window.setTimeout(() => {
+      seleccionarGrupo(destinoId);
+      setFase({ tipo: "entrando", signo });
+      temporizador.current = window.setTimeout(() => {
+        setFase({ tipo: "reposo", signo });
+        temporizador.current = null;
+      }, DURACION_DESLIZAMIENTO);
+    }, DURACION_DESLIZAMIENTO);
+  }
+
+  /** Cambio de grupo desde la barra: misma transición, con la dirección del orden de grupos. */
+  function seleccionarGrupoAnimado(id: string) {
+    if (!usuario || id === grupoActivo?.id) return;
+    if (prefiereMovimientoReducido() || fase.tipo !== "reposo") {
+      seleccionarGrupo(id);
+      return;
+    }
+    const i = listaGrupos.findIndex((g) => g.id === grupoActivo?.id);
+    const j = listaGrupos.findIndex((g) => g.id === id);
+    if (i < 0 || j < 0 || i === j) {
+      seleccionarGrupo(id);
+      return;
+    }
+    iniciarCambio(j > i ? -1 : 1, id);
+  }
+
   function toqueInicio(e: React.TouchEvent) {
-    if (e.touches.length !== 1) {
+    if (e.touches.length !== 1 || fase.tipo !== "reposo") {
       toque.current = null;
+      arrastrandoH.current = false;
       return;
     }
     const t = e.touches[0];
     toque.current = { x: t.clientX, y: t.clientY };
+    arrastrandoH.current = false;
+  }
+
+  function toqueMueve(e: React.TouchEvent) {
+    if (fase.tipo !== "reposo" || prefiereMovimientoReducido()) return;
+    const inicio = toque.current;
+    if (!inicio) return;
+    const t = e.touches[0];
+    const dx = t.clientX - inicio.x;
+    const dy = t.clientY - inicio.y;
+    if (!arrastrandoH.current) {
+      if (Math.abs(dx) < UMBRAL_ARRASTRE_INICIO || Math.abs(dx) <= Math.abs(dy)) return;
+      arrastrandoH.current = true;
+    }
+    const i = listaGrupos.findIndex((g) => g.id === grupoActivo?.id);
+    const hayVecino = dx > 0 ? i > 0 : i < listaGrupos.length - 1;
+    fijarDesplazamiento(hayVecino ? dx : dx * RESISTENCIA_EXTREMO);
   }
 
   function toqueFin(e: React.TouchEvent) {
     const inicio = toque.current;
     toque.current = null;
-    if (!inicio || !grupoActivo || listaGrupos.length < 2) return;
+    const arrastro = arrastrandoH.current;
+    arrastrandoH.current = false;
+    if (fase.tipo !== "reposo" || !inicio || !grupoActivo) return;
     const t = e.changedTouches[0];
     const dx = t.clientX - inicio.x;
     const dy = t.clientY - inicio.y;
-    if (Math.abs(dx) < UMBRAL_ARRASTRE || Math.abs(dx) <= Math.abs(dy)) return;
-    const i = listaGrupos.findIndex((g) => g.id === grupoActivo.id);
-    if (i < 0) return;
-    const j = dx > 0 ? i - 1 : i + 1;
-    if (j < 0 || j >= listaGrupos.length) return;
-    const destino = listaGrupos[j];
-    if (destino) seleccionarGrupo(destino.id);
+    const horizontal = Math.abs(dx) > Math.abs(dy);
+    if (listaGrupos.length >= 2 && horizontal && Math.abs(dx) >= UMBRAL_ARRASTRE) {
+      const i = listaGrupos.findIndex((g) => g.id === grupoActivo.id);
+      const j = dx > 0 ? i - 1 : i + 1;
+      const destino = j >= 0 && j < listaGrupos.length ? listaGrupos[j] : undefined;
+      suprimirClick.current = true;
+      if (i >= 0 && destino) {
+        iniciarCambio(dx > 0 ? 1 : -1, destino.id);
+        return;
+      }
+    }
+    if (arrastro) suprimirClick.current = true;
+    rebotar();
+  }
+
+  function toqueCancelar() {
+    toque.current = null;
+    arrastrandoH.current = false;
+    if (fase.tipo === "reposo") rebotar();
+  }
+
+  function capturarClick(e: React.MouseEvent) {
+    if (suprimirClick.current) {
+      suprimirClick.current = false;
+      e.preventDefault();
+      e.stopPropagation();
+    }
   }
 
   return (
@@ -208,16 +355,22 @@ export function Home() {
             <BarraGrupos
               grupos={listaGrupos}
               activoId={grupoActivo?.id}
-              onSeleccionar={seleccionarGrupo}
+              onSeleccionar={seleccionarGrupoAnimado}
             />
           )}
           {grupoActivo && (
             <div
-              onTouchStart={toqueInicio}
-              onTouchEnd={toqueFin}
+              className="deslizamiento-grupo overflow-hidden"
               style={{ touchAction: "pan-y" }}
+              onTouchStart={toqueInicio}
+              onTouchMove={toqueMueve}
+              onTouchEnd={toqueFin}
+              onTouchCancel={toqueCancelar}
+              onClickCapture={capturarClick}
             >
-              <SeccionGrupo key={grupoActivo.id} grupo={grupoActivo} modo={modo} variante="barra" />
+              <div ref={panel} className="will-change-transform">
+                <SeccionGrupo key={grupoActivo.id} grupo={grupoActivo} modo={modo} variante="barra" />
+              </div>
             </div>
           )}
         </>
