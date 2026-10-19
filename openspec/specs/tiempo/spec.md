@@ -94,12 +94,12 @@ La web SHALL mostrar, en la cabecera de todas las rutas y solo con sesión inici
 
 ### Requirement: Detalle del tiempo
 
-El panel de detalle SHALL mostrar condición textual, sensación térmica, máx/mín del día, probabilidad de lluvia, viento, humedad y las próximas horas de la ciudad por defecto, en grados Celsius, junto a la hora de actualización y la atribución a Open-Meteo, e incluir un selector con las ciudades configuradas.
+El panel de detalle SHALL mostrar condición textual, sensación térmica, máx/mín del día, probabilidad de lluvia, viento, humedad, el total de precipitación de hoy y las próximas horas de la ciudad por defecto, en grados Celsius y milímetros, junto a la hora de actualización y la atribución a Open-Meteo, e incluir un selector con las ciudades configuradas.
 
 #### Scenario: Detalle completo
 
 - **WHEN** el usuario abre el detalle con datos disponibles
-- **THEN** ve los valores actuales, la previsión de las próximas horas, la hora de actualización y la atribución a Open-Meteo
+- **THEN** ve los valores actuales, la probabilidad y la cantidad de precipitación, la previsión de las próximas horas, la hora de actualización y la atribución a Open-Meteo
 
 #### Scenario: Cambiar de ciudad en el selector
 
@@ -132,12 +132,12 @@ La web SHALL refrescar los datos meteorológicos automáticamente una vez por ho
 
 ### Requirement: Previsión de los próximos días
 
-El panel de detalle SHALL mostrar la previsión de los próximos días —hoy y los seis siguientes— para la ciudad seleccionada, con el nombre del día, el icono de su condición y las temperaturas máxima y mínima, en grados Celsius.
+El panel de detalle SHALL mostrar la previsión de los próximos días —hoy y los seis siguientes— para la ciudad seleccionada, con el nombre del día, el icono de su condición, la precipitación total del día y las temperaturas máxima y mínima, en grados Celsius y milímetros.
 
 #### Scenario: Lista de próximos días
 
 - **WHEN** el usuario abre el detalle con datos disponibles
-- **THEN** ve la previsión de hoy y los seis días siguientes con el nombre del día, el icono de la condición y las temperaturas máxima y mínima
+- **THEN** ve la previsión de hoy y los seis días siguientes con el nombre del día, el icono de la condición, la precipitación total y las temperaturas máxima y mínima
 
 #### Scenario: Cambio de ciudad actualiza la previsión
 
@@ -148,3 +148,52 @@ El panel de detalle SHALL mostrar la previsión de los próximos días —hoy y 
 
 - **WHEN** Open-Meteo no devuelve previsión diaria
 - **THEN** la sección de próximos días no se muestra y el resto del detalle sigue operativo
+
+### Requirement: Cantidad de precipitación
+
+La web SHALL mostrar la cantidad de precipitación que devuelve Open-Meteo en milímetros, sin convertir de unidad, en el resumen del día («Precip. hoy»), en la previsión de las próximas horas y en la previsión diaria. SHALL omitir los valores nulos o iguales a cero y formatear con una decimal como máximo y coma decimal española.
+
+#### Scenario: Resumen con precipitación hoy
+
+- **WHEN** Open-Meteo devuelve un total diario mayor que cero para hoy
+- **THEN** el resumen muestra «Precip. hoy» con ese valor en mm
+
+#### Scenario: Resumen sin precipitación hoy
+
+- **WHEN** el total diario de hoy es cero o no está disponible
+- **THEN** el resumen no muestra el item «Precip. hoy»
+
+#### Scenario: Previsión por horas con precipitación
+
+- **WHEN** alguna de las próximas horas tiene una cantidad mayor que cero
+- **THEN** esa hora muestra su cantidad en mm y las horas con cero o sin dato no muestran cantidad
+
+#### Scenario: Previsión por horas sin precipitación
+
+- **WHEN** todas las próximas horas tienen cantidad cero o sin dato
+- **THEN** no se muestra ninguna cantidad en «Próximas horas»
+
+#### Scenario: Previsión diaria con precipitación
+
+- **WHEN** algún día de la previsión tiene una suma diaria mayor que cero
+- **THEN** ese día muestra su cantidad en mm y los días con cero o sin dato no muestran cantidad
+
+#### Scenario: Previsión diaria sin precipitación
+
+- **WHEN** todos los días de la previsión tienen suma cero o sin dato
+- **THEN** no se muestra la columna de precipitación
+
+#### Scenario: Dato de precipitación ausente
+
+- **WHEN** Open-Meteo no devuelve el campo de precipitación para una hora o un día
+- **THEN** no se muestra cantidad para ese periodo y el resto del panel sigue operativo
+
+#### Scenario: Formato de la cantidad
+
+- **WHEN** la web muestra una cantidad de precipitación
+- **THEN** usa como máximo una decimal y coma decimal española
+
+#### Scenario: Sin conversión de unidad
+
+- **WHEN** la web muestra una cantidad de precipitación
+- **THEN** usa el valor y la unidad mm de Open-Meteo, sin convertirlo a l/m² ni recalcularlo
