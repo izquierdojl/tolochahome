@@ -13,6 +13,7 @@ export interface HoraPrevision {
   temperatura: number;
   codigo: number;
   lluvia: number;
+  precipitacion: number | null;
 }
 
 export interface DiaPrevision {
@@ -21,6 +22,7 @@ export interface DiaPrevision {
   codigo: number;
   max: number;
   min: number;
+  precipitacion: number | null;
 }
 
 export interface DatosTiempo {
@@ -62,12 +64,14 @@ interface RespuestaForecast {
     temperature_2m?: number[];
     weather_code?: number[];
     precipitation_probability?: (number | null)[];
+    precipitation?: (number | null)[];
   };
   daily?: {
     time?: string[];
     weather_code?: number[];
     temperature_2m_max?: number[];
     temperature_2m_min?: number[];
+    precipitation_sum?: (number | null)[];
   };
 }
 
@@ -98,6 +102,7 @@ function aDatosTiempo(r: RespuestaForecast): DatosTiempo {
   const temperaturas = r.hourly?.temperature_2m ?? [];
   const codigos = r.hourly?.weather_code ?? [];
   const lluvia = r.hourly?.precipitation_probability ?? [];
+  const precipitaciones = r.hourly?.precipitation ?? [];
 
   const claveHora = horaActual.slice(0, 13);
   let inicio = tiempos.findIndex((t) => t.slice(0, 13) === claveHora);
@@ -109,18 +114,21 @@ function aDatosTiempo(r: RespuestaForecast): DatosTiempo {
     temperatura: temperaturas[inicio + i] ?? 0,
     codigo: codigos[inicio + i] ?? 0,
     lluvia: lluvia[inicio + i] ?? 0,
+    precipitacion: precipitaciones[inicio + i] ?? null,
   }));
 
   const fechas = r.daily?.time ?? [];
   const codigosDia = r.daily?.weather_code ?? [];
   const maximas = r.daily?.temperature_2m_max ?? [];
   const minimas = r.daily?.temperature_2m_min ?? [];
+  const precipitacionesDia = r.daily?.precipitation_sum ?? [];
   const dias: DiaPrevision[] = fechas.slice(0, 7).map((fecha, i) => ({
     fecha,
     nombre: nombreDia(fecha, i),
     codigo: codigosDia[i] ?? 0,
     max: maximas[i] ?? 0,
     min: minimas[i] ?? 0,
+    precipitacion: precipitacionesDia[i] ?? null,
   }));
 
   return {
@@ -140,6 +148,16 @@ function aDatosTiempo(r: RespuestaForecast): DatosTiempo {
   };
 }
 
+const FORMATO_PRECIPITACION = new Intl.NumberFormat("es-ES", {
+  maximumFractionDigits: 1,
+});
+
+/** Texto de precipitación en mm, o null si no hay cantidad que mostrar. */
+export function formatearPrecipitacion(valor: number | null | undefined): string | null {
+  if (valor === null || valor === undefined || valor <= 0) return null;
+  return `${FORMATO_PRECIPITACION.format(valor)} mm`;
+}
+
 /** Forecast de todas las ciudades en una sola petición multi-coordenada, en el mismo orden. */
 export async function pedirTiempo(ciudades: Coordenadas[]): Promise<DatosTiempo[]> {
   if (ciudades.length === 0) return [];
@@ -148,8 +166,8 @@ export async function pedirTiempo(ciudades: Coordenadas[]): Promise<DatosTiempo[
     longitude: ciudades.map((c) => c.lon).join(","),
     current:
       "temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,is_day",
-    hourly: "temperature_2m,weather_code,precipitation_probability",
-    daily: "weather_code,temperature_2m_max,temperature_2m_min",
+    hourly: "temperature_2m,weather_code,precipitation_probability,precipitation",
+    daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum",
     timezone: "auto",
     forecast_days: "7",
   });
