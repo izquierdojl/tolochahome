@@ -22,6 +22,8 @@ Startpage autoalojada por usuario para usar como página principal en navegadore
 - No publicar secretos: `.env` está gitignored; no comitearlo ni exponerlo.
 - No empezar implementaciones nuevas sin que exista un change OpenSpec propuesto.
 - Calidad antes de terminar una tarea: `npm run typecheck`, `npm run lint`, `npm run test`, `npm run build`.
+- Mantener `npm audit` sin vulnerabilidades altas/críticas en producción. Dependabot
+  propone las actualizaciones cada semana y CI ejecuta la auditoría.
 - Confirmar en Docker tras cambios del backend: `docker compose up --build -d` + smoke
   (`/api/v1/health` y `/` sirve la web).
 - **Archivar = commitear TODO incluido código.** Al archivar un change, los cambios de código
@@ -117,9 +119,12 @@ Formato semver `X.Y.Z`. Automático con cada PR fusionado en `dev`:
 - Flujo: merge a `dev` → `version.yml` analiza commits desde el último tag →
   `node scripts/bump.js <bump>` (sincroniza versión en root + workspaces,
   commit `chore(release): vX.Y.Z`, tag `vX.Y.Z`). Solo versionado, sin publicar imagen.
-- GHCR: la imagen se publica únicamente con push o PR a `main` — el merge `dev`→`main`
-  publica `:latest`, `:vX.Y.Z` y `:vX.Y` (versión de `package.json`); un PR a `main`
-  publica `:pr-<n>`.
+- GHCR: la imagen se publica con push o PR a `main` — el merge `dev`→`main`
+  publica `:latest`, `:vX.Y.Z`, `:vX.Y` (versión de `package.json`) y
+  `:node<versión>`; un PR a `main` publica `:pr-<n>`. Además, `release.yml`
+  comprueba cada 6 horas la última versión `24.x` de Node y, si la imagen
+  `:latest` lleva una anterior, la reconstruye y publica `:latest` y
+  `:node<versión>` (sin cambiar la versión de la app).
 - Los skills de OpenSpec se regeneran con `openspec update`: las reglas de release viven aquí,
   en `AGENTS.md`, y se re-aplican a mano si un update las borra de algún skill.
 

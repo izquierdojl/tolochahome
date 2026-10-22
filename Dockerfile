@@ -1,7 +1,11 @@
 # syntax=docker/dockerfile:1
 
+# Versión de Node. Por defecto sigue la línea 24 (último parche al construir);
+# el workflow programado pasa la versión exacta para poder etiquetar la imagen.
+ARG NODE_VERSION=24
+
 # -- deps: instala dependencias de los workspaces ---------------------------
-FROM node:24-alpine AS deps
+FROM node:${NODE_VERSION}-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/api/package.json apps/api/package.json
@@ -18,7 +22,7 @@ RUN npm run build \
   && npm prune --omit=dev
 
 # -- runtime: imagen final del servicio --------------------------------------
-FROM node:24-alpine AS runtime
+FROM node:${NODE_VERSION}-alpine AS runtime
 ENV NODE_ENV=production \
     PORT=3000 \
     DATABASE_PATH=/data/tolochahome.db \

@@ -1,0 +1,45 @@
+version: 2
+
+# Actualizaciones semanales de dependencias. Los parches y cambios menores se
+# agrupan para reducir ruido; los cambios major llegan en PRs individuales.
+# Las alertas y las actualizaciones de seguridad están activadas en el repo.
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Madrid
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "chore(deps)"
+    labels:
+      - dependencias
+    groups:
+      produccion:
+        dependency-type: production
+        update-types:
+          - minor
+          - patch
+      desarrollo:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Madrid
+    commit-message:
+      prefix: "chore(ci)"
+    labels:
+      - dependencias
+    groups:
+      actions:
+        patterns:
+          - "*"
