@@ -1,8 +1,10 @@
 name: release
 
-# Publica la imagen en GHCR solo con push o PR a main (nada de builds desde dev):
-# - Push a main (merge dev→main) → :latest, :vX.Y.Z y :vX.Y (versión de package.json).
+# Publica la imagen en GHCR:
+# - Push a main (merge dev→main) → :latest, :vX.Y.Z, :vX.Y y :node<ver>.
 # - PR a main → :pr-<n>, para probar la imagen antes de fusionar.
+# - Programado (cada 6 h) → si hay un Node 24.x nuevo: :latest y :node<ver>.
+# - Manual → misma comprobación; `force` republica aunque no haya novedad.
 on:
   push:
     branches:
@@ -10,6 +12,14 @@ on:
   pull_request:
     branches:
       - "main"
+  schedule:
+    - cron: "23 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Republicar aunque la versión de Node ya esté al día"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -18,23 +28,94 @@ permissions:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  NODE_MAJOR: "24"
+
+concurrency:
+  group: release-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'main' }}
+  cancel-in-progress: false
 
 jobs:
-  release:
+  check:
+    # Solo en ejecuciones programadas o manuales: compara el Node de :latest
+    # con el último 24.x publicado por nodejs.org.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    # Un PR desde un fork no tiene permisos de paquetes: solo se publica si viene del mismo repo.
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    outputs:
+      needed: ${{ steps.compare.outputs.needed }}
+      version: ${{ steps.compare.outputs.version }}
+    steps:
+      - name: Login a GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Comparar Node de :latest con el último 24.x
+        id: compare
+        run: |
+          TARGET="$(curl -fsSL https://nodejs.org/dist/index.json \
+            | jq -r --arg major "v${NODE_MAJOR}." \
+              '[.[] | select(.version | startswith($major))][0].version' \
+            | sed 's/^v//')"
+          if [[ -z "$TARGET" || "$TARGET" == "null" ]]; then
+            echo "::error::No se pudo obtener la última versión de Node ${NODE_MAJOR}.x"
+            exit 1
+          fi
+          IMAGE="${REGISTRY}/${IMAGE_NAME}:latest"
+          CURRENT=""
+          if docker manifest inspect "$IMAGE" >/dev/null 2>&1; then
+            CURRENT="$(docker run --rm --entrypoint node "$IMAGE" -v 2>/dev/null | sed 's/^v//' || true)"
+          fi
+          echo "Node en :latest = ${CURRENT:-desconocido}; último ${NODE_MAJOR}.x = ${TARGET}"
+          NEEDED=true
+          if [[ "$CURRENT" == "$TARGET" && "${{ inputs.force }}" != "true" ]]; then
+            NEEDED=false
+          fi
+          echo "needed=$NEEDED" >> "$GITHUB_OUTPUT"
+          echo "version=$TARGET" >> "$GITHUB_OUTPUT"
+
+  release:
+    needs: check
+    runs-on: ubuntu-latest
+    # En push/PR siempre (mismo repo); en programado/manual solo si hay novedad.
+    if: |
+      always() && !cancelled() && (
+        github.event_name == 'push' ||
+        (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) ||
+        needs.check.outputs.needed == 'true'
+      )
     steps:
       - uses: actions/checkout@v4
+        with:
+          # El schedule se ejecuta desde la rama por defecto (dev); construir main.
+          ref: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'main' || github.ref }}
       - id: tags
         run: |
-          BASE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+          BASE="${REGISTRY}/${IMAGE_NAME}"
+          # En programado/manual la versión ya la resolvió el job check. En push
+          # se consulta aquí, tolerando un fallo de red: si no se sabe, no se
+          # añade :node<ver> y se construye con la etiqueta flotante 24.
+          NODE="${{ needs.check.outputs.version }}"
+          if [[ -z "$NODE" && "${{ github.event_name }}" == "push" ]]; then
+            NODE="$(curl -fsSL https://nodejs.org/dist/index.json \
+              | jq -r --arg major "v${NODE_MAJOR}." \
+                '[.[] | select(.version | startswith($major))][0].version' \
+              | sed 's/^v//' || true)"
+          fi
+          BUILD_NODE="${NODE:-${NODE_MAJOR}}"
+          V="$(jq -r .version package.json)"
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             echo "list=${BASE}:pr-${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ github.event_name }}" == "schedule" || "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "list=${BASE}:latest,${BASE}:node${BUILD_NODE}" >> "$GITHUB_OUTPUT"
           else
-            V="$(jq -r .version package.json)"
-            echo "list=${BASE}:latest,${BASE}:v${V},${BASE}:v${V%.*}" >> "$GITHUB_OUTPUT"
+            TAGS="${BASE}:latest,${BASE}:v${V},${BASE}:v${V%.*}"
+            if [[ -n "$NODE" ]]; then
+              TAGS="${TAGS},${BASE}:node${NODE}"
+            fi
+            echo "list=${TAGS}" >> "$GITHUB_OUTPUT"
           fi
+          echo "build_node=${BUILD_NODE}" >> "$GITHUB_OUTPUT"
           echo "Tags: $(grep '^list=' "$GITHUB_OUTPUT" | cut -d= -f2-)"
       - name: Set up BuildKit
         uses: docker/setup-buildx-action@v3
@@ -50,5 +131,7 @@ jobs:
           context: .
           push: true
           tags: ${{ steps.tags.outputs.list }}
+          build-args: |
+            NODE_VERSION=${{ steps.tags.outputs.build_node }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

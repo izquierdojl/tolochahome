@@ -27,6 +27,9 @@ curl -fsS http://127.0.0.1:3000/api/v1/health
 curl -fsS http://127.0.0.1:3000/ | head
 ```
 
+La imagen acepta `--build-arg NODE_VERSION=<x.y.z>` para fijar la versión exacta
+de Node; por defecto usa la línea 24 (último parche disponible al construir).
+
 ## OpenSpec (resumen)
 
 Crear changes con `scripts/new_change.sh <tipo> "<título>" [rama]`
@@ -45,9 +48,39 @@ Archivar = commitear TODO (código + specs) antes del merge; comprobar `git stat
 - **`version`**: al hacer merge/push a `dev` (salvo `chore(release):`),
   `scripts/determine-bump.js` decide `major|minor|patch` desde los commits
   y `node scripts/bump.js <bump>` crea commit `chore(release): vX.Y.Z` + tag.
-- **`release`**: publica en GHCR solo con push o PR a `main`. En push a `main`
-  publica `:latest`, `:vX.Y.Z` y `:vX.Y` (versión de `package.json`); en PR a
-  `main`, `:pr-<n>`. Desde `dev` ni por tags no se publica imagen.
+- **`release`**: publica en GHCR con push o PR a `main`. En push a `main`
+  publica `:latest`, `:vX.Y.Z`, `:vX.Y` (versión de `package.json`) y
+  `:node<versión>`; en PR a `main`, `:pr-<n>`. Desde `dev` ni por tags no se
+  publica imagen.
+- **`release` programado**: cada 6 horas compara la última `24.x` de
+  `nodejs.org/dist/index.json` con el Node que contiene la imagen `:latest`.
+  Si hay una versión nueva, reconstruye y publica `:latest` y `:node<versión>`,
+  sin tocar `:vX.Y.Z` ni la versión de `package.json`. También se puede lanzar
+  a mano (`gh workflow run release.yml --ref main`) y forzar la republicación
+  con `-f force=true`.
+
+## Dependencias y seguridad
+
+- **Dependabot** abre PRs cada lunes con las actualizaciones de `npm`
+  (producción y desarrollo agrupadas por parches/menores) y de las GitHub
+  Actions. Las alertas y las actualizaciones de seguridad están activadas en
+  el repositorio, así que un aviso nuevo genera su PR sin esperar a la revisión
+  semanal.
+- **CI** ejecuta `npm audit --omit=dev --audit-level=high`: si aparece una
+  vulnerabilidad alta o crítica en dependencias de producción, el pipeline
+  falla y no se puede fusionar sin resolverla.
+- Revisar y actualizar a mano cuando toque:
+
+  ```bash
+  npm audit                  # informe completo (producción + desarrollo)
+  npm audit fix              # parches compatibles
+  npm outdated               # versiones disponibles
+  ```
+
+- `package.json` incluye un `overrides` que fuerza `esbuild@0.25.12` dentro de
+  `@esbuild-kit/core-utils` (dependencia de `drizzle-kit`). Es la única forma de
+  dejar el audit a cero sin bajar `drizzle-kit`; se probó que `drizzle-kit
+  generate` sigue funcionando. Revisar el override al actualizar `drizzle-kit`.
 
 Reglas semver (`AGENTS.md` §8):
 
