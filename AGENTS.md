@@ -127,10 +127,14 @@ Formato semver `X.Y.Z`. Automático **al liberar en `main`**, no en cada merge a
   No se publican `:pr-<n>` ni imágenes desde `dev`. Si un release falla
   después de publicar el commit/tag (por ejemplo, al subir la imagen), una
   re-ejecución reutiliza el tag de `HEAD` y reconstruye la misma versión.
+- `main` tiene el ruleset `main-ci`, que exige el check `ci-ok`. El push del
+  commit/tag de versión usa la deploy key `release-bot` (secreto
+  `RELEASE_DEPLOY_KEY`) con bypass; el usuario también puede saltarlo.
 - `release.yml` (`release-node`) comprueba cada 6 horas la última versión
   `24.x` de Node y, si `:latest` lleva una anterior, la reconstruye y publica
   `:latest` y `:node<versión>` sin cambiar la versión de la app. `security.yml`
-  escanea `:latest` a diario y `cleanup.yml` borra tags `pr-*` de más de 7 días.
+  escanea `:latest` a diario y `cleanup.yml` borra tags `pr-*` y, si no comparte
+  versión con tags históricos, el `:dev` obsoleto con más de 7 días.
 - Los skills de OpenSpec se regeneran con `openspec update`: las reglas de release viven aquí,
   en `AGENTS.md`, y se re-aplican a mano si un update las borra de algún skill.
 

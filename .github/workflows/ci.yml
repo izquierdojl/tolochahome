@@ -140,14 +140,19 @@ jobs:
       github.ref == 'refs/heads/main' &&
       needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
+    # El push a main lo hace una deploy key con bypass en el ruleset main-ci.
+    # GITHUB_TOKEN se queda en lectura; la imagen usa packages: write.
     permissions:
-      contents: write
+      contents: read
       packages: write
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           fetch-tags: true
+          ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }}
+      - name: Configurar remote SSH
+        run: git remote set-url origin "git@github.com:${GITHUB_REPOSITORY}.git"
       - uses: actions/setup-node@v4
         with:
           node-version: 24

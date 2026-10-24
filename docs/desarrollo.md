@@ -70,12 +70,12 @@ Archivar = commitear TODO (código + specs) antes del merge; comprobar `git stat
 - **`security`**: escanea `:latest` con Trivy a diario (HIGH/CRITICAL, solo
   vulnerabilidades con fix). También se puede lanzar a mano.
 - **`cleanup`**: semanal borra versiones de GHCR cuyos tags sean solo `pr-*`
-  y tengan más de 7 días. No toca `:latest`, semver ni `:node<ver>`. Se puede
-  lanzar a mano con `dry_run` para revisar antes.
-- **Ruleset**: `ci-ok` es el check estable para exigir CI en `main`. Si se
-  activa un ruleset, el push del commit/tag de versión que hace el job
-  `release` con `GITHUB_TOKEN` necesita un bypass o un PAT; no se configura
-  automáticamente desde el workflow.
+  o solo `dev` (si no comparte versión con tags históricos), con más de 7 días.
+  No toca `:latest`, semver ni `:node<ver>`. Se puede lanzar a mano con
+  `dry_run` para revisar antes.
+- **Ruleset**: `main-ci` exige `ci-ok` en `main`. El usuario y la deploy key
+  `release-bot` tienen bypass. El job `release` hace checkout y push con el
+  secreto `RELEASE_DEPLOY_KEY`; `GITHUB_TOKEN` solo se usa para GHCR.
 
 ## Dependencias y seguridad
 
