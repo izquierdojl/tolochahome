@@ -213,7 +213,7 @@ jobs:
           fi
           curl -fsS http://127.0.0.1:3100/ | grep -qiE "TolochaHome|tolochahome|<!doctype html"
       - name: Escanear imagen (Trivy)
-        uses: aquasecurity/trivy-action@0.36.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: tolochahome:release
           format: table
