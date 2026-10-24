@@ -16,8 +16,11 @@
     "build": "npm run build --workspace @tolochahome/api && npm run build --workspace @tolochahome/web",
     "start": "npm run start --workspace @tolochahome/api",
     "test": "npm run test --workspace @tolochahome/api",
+    "test:changed": "npm run test:changed --workspace @tolochahome/api",
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
+    "verify": "npm run typecheck && npm run lint && npm test && npm run build",
+    "verify:fast": "npm run typecheck && npm run lint && npm run test:changed",
     "release:spec": "node scripts/bump.js minor",
     "release:fix": "node scripts/bump.js patch",
     "release:major": "node scripts/bump.js major"

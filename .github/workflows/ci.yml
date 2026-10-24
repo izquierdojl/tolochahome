@@ -9,15 +9,72 @@ on:
 permissions:
   contents: read
 
+# Cancela ejecuciones antiguas del mismo PR o rama. En main nunca se cancela:
+# el release debe terminar para no dejar una versión a medias.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
 jobs:
+  # Se ejecuta siempre: valida OpenSpec y decide qué trabajos hacen falta.
   changes:
     runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.files.outputs.code }}
+      docker: ${{ steps.files.outputs.docker }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Detectar rutas afectadas
+        id: files
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          BEFORE: ${{ github.event.before }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT" == "pull_request" ]]; then
+            git fetch --no-tags origin "$BASE_REF"
+            RANGE="FETCH_HEAD...$SHA"
+          elif [[ "$BEFORE" =~ ^0+$ ]]; then
+            RANGE="HEAD~1..HEAD"
+          else
+            RANGE="$BEFORE..$SHA"
+          fi
+          FILES="$(git diff --name-only "$RANGE")"
+          printf 'Archivos cambiados:\n%s\n' "$FILES"
+          CODE=false
+          DOCKER=false
+          while IFS= read -r f; do
+            [[ -z "$f" ]] && continue
+            case "$f" in
+              docs/*|openspec/*|.opencode/*|*.md|LICENSE|.gitignore) ;;
+              *) CODE=true ;;
+            esac
+            case "$f" in
+              Dockerfile|docker-entrypoint.sh|.dockerignore|package.json|package-lock.json|tsconfig*.json|apps/*/package.json|apps/*/tsconfig*.json|apps/api/drizzle/*|apps/web/vite.config.*|apps/api/vite.config.*)
+                DOCKER=true
+                ;;
+            esac
+          done <<< "$FILES"
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          echo "docker=$DOCKER" >> "$GITHUB_OUTPUT"
       - name: Validar changes OpenSpec
         run: bash scripts/check_changes.sh
 
   quality:
+    needs: changes
+    # En un PR dev→main el mismo SHA ya se validó en el push a dev. El merge a
+    # main se vuelve a validar y el release no publica si `quality` falla.
+    if: |
+      needs.changes.outputs.code == 'true' &&
+      !(github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'dev')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,21 +85,17 @@ jobs:
       - run: npm ci
       - name: Auditar dependencias de producción
         run: npm audit --omit=dev --audit-level=high
-      - run: npm run typecheck --workspaces --if-present
-      - run: npm run lint --workspaces --if-present
-      - run: npm test --workspace @tolochahome/api --if-present
-      - run: npm run build
-      - if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-output
-          path: |
-            apps/api/dist
-            apps/web/dist
-          retention-days: 7
+      - name: Typecheck, lint, tests y build
+        run: npm run verify
 
+  # Docker solo cuando el cambio puede afectar al empaquetado. En main lo
+  # construye y publica el job release, una sola vez.
   docker:
-    needs: quality
+    needs: [changes, quality]
+    if: |
+      needs.changes.outputs.code == 'true' &&
+      needs.changes.outputs.docker == 'true' &&
+      github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -58,18 +111,158 @@ jobs:
           cache-to: type=gha,mode=max
       - name: Smoke test en contenedor
         run: |
+          set -euo pipefail
           docker run -d --name tolochahome-smoke \
             -e JWT_ACCESS_SECRET="smoke-access-secret-0123456789abcd" \
             -e JWT_REFRESH_SECRET="smoke-refresh-secret-9876543210wxyz" \
             -p 127.0.0.1:3100:3000 tolochahome:test
-          sleep 3
-          docker ps -a
-          echo "--- logs del arranque ---"
-          docker logs tolochahome-smoke
-          echo "--- probando health ---"
-          for i in $(seq 1 30); do
-            curl -fsS http://127.0.0.1:3100/api/v1/health && break || sleep 1
+          cleanup() { docker rm -f tolochahome-smoke >/dev/null 2>&1 || true; }
+          trap cleanup EXIT
+          for _ in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3100/api/v1/health >/dev/null; then
+              break
+            fi
+            sleep 1
           done
-          curl -fsS http://127.0.0.1:3100/api/v1/health
-          curl -fsS http://127.0.0.1:3100/ | grep -qi "TolochaHome\|tolochahome\|<!doctype html"
-          docker stop tolochahome-smoke
+          if ! curl -fsS http://127.0.0.1:3100/api/v1/health; then
+            docker logs tolochahome-smoke
+            exit 1
+          fi
+          curl -fsS http://127.0.0.1:3100/ | grep -qiE "TolochaHome|tolochahome|<!doctype html"
+
+  # Una sola construcción por release: bump local, build, smoke, escaneo y,
+  # solo si todo pasa, push del tag/commit y de la imagen.
+  release:
+    needs: [changes, quality]
+    if: |
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Configurar git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      - name: Decidir versión y crear release local
+        id: version
+        run: |
+          set -euo pipefail
+          EXISTING="$(git describe --tags --exact-match HEAD 2>/dev/null || true)"
+          if [[ "$EXISTING" == v* ]]; then
+            V="${EXISTING#v}"
+            echo "Reutilizando versión ${V} ya etiquetada en HEAD (re-ejecución)"
+          else
+            BUMP="$(node scripts/determine-bump.js)"
+            echo "Bump decidido: $BUMP"
+            node scripts/bump.js "$BUMP"
+            V="$(node -p "require('./package.json').version")"
+          fi
+          NODE="$(node -v | sed 's/^v//')"
+          {
+            echo "version=$V"
+            echo "tag=v$V"
+            echo "node=$NODE"
+          } >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v3
+      - name: Login a GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build imagen (sin publicar)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: tolochahome:release
+          build-args: |
+            NODE_VERSION=${{ steps.version.outputs.node }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Smoke test en contenedor
+        run: |
+          set -euo pipefail
+          docker run -d --name tolochahome-release \
+            -e JWT_ACCESS_SECRET="smoke-access-secret-0123456789abcd" \
+            -e JWT_REFRESH_SECRET="smoke-refresh-secret-9876543210wxyz" \
+            -p 127.0.0.1:3100:3000 tolochahome:release
+          cleanup() { docker rm -f tolochahome-release >/dev/null 2>&1 || true; }
+          trap cleanup EXIT
+          for _ in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3100/api/v1/health >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          if ! curl -fsS http://127.0.0.1:3100/api/v1/health; then
+            docker logs tolochahome-release
+            exit 1
+          fi
+          curl -fsS http://127.0.0.1:3100/ | grep -qiE "TolochaHome|tolochahome|<!doctype html"
+      - name: Escanear imagen (Trivy)
+        uses: aquasecurity/trivy-action@0.36.0
+        with:
+          image-ref: tolochahome:release
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
+      - name: Publicar commit y tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          git push --atomic origin HEAD:main "refs/tags/v$VERSION"
+      - name: Publicar imagen
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          NODE_VERSION: ${{ steps.version.outputs.node }}
+        run: |
+          set -euo pipefail
+          BASE="${REGISTRY}/${IMAGE_NAME}"
+          TAGS=(
+            "$BASE:latest"
+            "$BASE:v$VERSION"
+            "$BASE:v${VERSION%.*}"
+            "$BASE:node$NODE_VERSION"
+          )
+          for tag in "${TAGS[@]}"; do
+            docker tag tolochahome:release "$tag"
+            docker push "$tag"
+          done
+          printf 'Tags publicados: %s\n' "${TAGS[*]}"
+
+  # Check estable para un futuro ruleset: éxito si no hay ningún job fallido.
+  ci-ok:
+    needs: [changes, quality, docker, release]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comprobar resultados
+        env:
+          CHANGES: ${{ needs.changes.result }}
+          QUALITY: ${{ needs.quality.result }}
+          DOCKER: ${{ needs.docker.result }}
+          RELEASE: ${{ needs.release.result }}
+        run: |
+          echo "changes=$CHANGES quality=$QUALITY docker=$DOCKER release=$RELEASE"
+          for result in "$CHANGES" "$QUALITY" "$DOCKER" "$RELEASE"; do
+            if [[ "$result" == "failure" || "$result" == "cancelled" ]]; then
+              echo "::error::Un job necesario terminó en $result"
+              exit 1
+            fi
+          done

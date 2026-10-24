@@ -1,6 +1,9 @@
 import bcrypt from "bcryptjs";
 
-const COST = 12;
+const IS_TEST = process.env.NODE_ENV === "test";
+// En test se usa un coste bajo para que la suite no dependa de la CPU del
+// runner. En producción y desarrollo se mantiene el coste real.
+const COST = IS_TEST ? 4 : 12;
 
 /**
  * Hash ficticio con el mismo coste para comparar cuando el email no existe:
