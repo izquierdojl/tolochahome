@@ -33,7 +33,12 @@ COPY --from=build /app/apps/api/package.json ./apps/api/package.json
 COPY --from=build /app/apps/api/drizzle ./apps/api/drizzle
 COPY --from=build /app/apps/web/dist ./apps/web/dist
 COPY --from=build /app/node_modules ./node_modules
+# El runtime solo necesita node; npm/corepack no se usan y añaden superficie
+# y vulnerabilidades de dependencias empaquetadas en la imagen base.
 RUN apk add --no-cache su-exec \
+  && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+  && rm -f /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
+    /usr/local/bin/yarn /usr/local/bin/yarnpkg \
   && mkdir -p /data \
   && chown -R node:node /app /data
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh

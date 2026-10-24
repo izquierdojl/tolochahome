@@ -1,0 +1,40 @@
+name: security
+
+# Escaneo diario de la imagen publicada. El release normal ya escanea la
+# imagen antes de publicarla; esto cubre CVEs nuevas en :latest.
+on:
+  schedule:
+    - cron: "41 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: security-latest
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login a GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Escanear :latest (Trivy)
+        uses: aquasecurity/trivy-action@0.36.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: HIGH,CRITICAL

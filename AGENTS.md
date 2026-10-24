@@ -21,7 +21,8 @@ Startpage autoalojada por usuario para usar como página principal en navegadore
 - Hablar y escribir textos (UI, commits, docs) en **español**.
 - No publicar secretos: `.env` está gitignored; no comitearlo ni exponerlo.
 - No empezar implementaciones nuevas sin que exista un change OpenSpec propuesto.
-- Calidad antes de terminar una tarea: `npm run typecheck`, `npm run lint`, `npm run test`, `npm run build`.
+- Calidad antes de terminar una tarea: `npm run verify` (typecheck + lint + test + build).
+  Para iterar: `npm run verify:fast` (solo tests afectados por los cambios).
 - Mantener `npm audit` sin vulnerabilidades altas/críticas en producción. Dependabot
   propone las actualizaciones cada semana y CI ejecuta la auditoría.
 - Confirmar en Docker tras cambios del backend: `docker compose up --build -d` + smoke
@@ -43,8 +44,8 @@ scripts/
 ├── new_change.sh      Crea changes (DEFAULT_BRANCH=dev)
 ├── spec_id.py         Genera id8 hex único
 ├── check_changes.sh   Valida meta.yaml (CI)
-├── bump.js            Sube versión root + workspaces, commit + tag
-└── determine-bump.js  Decide major|minor|patch desde commits (version.yml)
+├── bump.js            Sube versión root + workspaces + lock, commit + tag
+└── determine-bump.js  Decide major|minor|patch desde commits (job release de ci.yml)
 docs/
 ├── instalacion.md  Requisitos, arranque local, variables de entorno
 ├── despliegue.md   Docker, GHCR y proxy inverso (obligatorio leer para exponer)
@@ -112,19 +113,24 @@ Los cambios pequeños se archivan pronto: un change = una capacidad. Los módulo
 
 ## 8. Versionado y releases
 
-Formato semver `X.Y.Z`. Automático con cada PR fusionado en `dev`:
+Formato semver `X.Y.Z`. Automático **al liberar en `main`**, no en cada merge a `dev`:
 
 - `feat` o tipo `feature` → `minor`; `fix`/`bug` → `patch`; `BREAKING CHANGE`/`!` → `major`.
 - `infra`/`docs`/`refactor`/`test`/`chore` → `patch` salvo `BREAKING`.
-- Flujo: merge a `dev` → `version.yml` analiza commits desde el último tag →
-  `node scripts/bump.js <bump>` (sincroniza versión en root + workspaces,
-  commit `chore(release): vX.Y.Z`, tag `vX.Y.Z`). Solo versionado, sin publicar imagen.
-- GHCR: la imagen se publica con push o PR a `main` — el merge `dev`→`main`
-  publica `:latest`, `:vX.Y.Z`, `:vX.Y` (versión de `package.json`) y
-  `:node<versión>`; un PR a `main` publica `:pr-<n>`. Además, `release.yml`
-  comprueba cada 6 horas la última versión `24.x` de Node y, si la imagen
-  `:latest` lleva una anterior, la reconstruye y publica `:latest` y
-  `:node<versión>` (sin cambiar la versión de la app).
+- Flujo: merge `dev`→`main` → `ci` valida (quality) → el job `release` de
+  `ci.yml` analiza los commits desde el último tag y ejecuta
+  `node scripts/bump.js <bump>`. El script sincroniza versión en root,
+  workspaces y `package-lock.json`, crea `chore(release): vX.Y.Z` + tag y el
+  job construye, prueba y escanea **una sola imagen**. Solo entonces publica
+  el commit/tag y la imagen en GHCR.
+- GHCR: `:latest`, `:vX.Y.Z`, `:vX.Y` y `:node<versión>` solo desde `main`.
+  No se publican `:pr-<n>` ni imágenes desde `dev`. Si un release falla
+  después de publicar el commit/tag (por ejemplo, al subir la imagen), una
+  re-ejecución reutiliza el tag de `HEAD` y reconstruye la misma versión.
+- `release.yml` (`release-node`) comprueba cada 6 horas la última versión
+  `24.x` de Node y, si `:latest` lleva una anterior, la reconstruye y publica
+  `:latest` y `:node<versión>` sin cambiar la versión de la app. `security.yml`
+  escanea `:latest` a diario y `cleanup.yml` borra tags `pr-*` de más de 7 días.
 - Los skills de OpenSpec se regeneran con `openspec update`: las reglas de release viven aquí,
   en `AGENTS.md`, y se re-aplican a mano si un update las borra de algún skill.
 
