@@ -120,7 +120,7 @@ Formato semver `X.Y.Z`. Automático **al liberar en `main`**, no en cada merge a
 - Flujo: merge `dev`→`main` → `ci` valida (quality) → el job `release` de
   `ci.yml` analiza los commits desde el último tag y ejecuta
   `node scripts/bump.js <bump>`. El script sincroniza versión en root,
-  workspaces y `package-lock.json`, crea `chore(release): vX.Y.Z` + tag y el
+  workspaces y `package-lock.json`, crea `chore(release): vX.Y.Z [skip ci]` + tag y el
   job construye, prueba y escanea **una sola imagen**. Solo entonces publica
   el commit/tag y la imagen en GHCR.
 - GHCR: `:latest`, `:vX.Y.Z`, `:vX.Y` y `:node<versión>` solo desde `main`.

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Sube la version (semver) en la raiz y en todos los workspaces,
- * crea el commit "chore(release): vX.Y.Z" y el tag "vX.Y.Z".
+ * crea el commit "chore(release): vX.Y.Z [skip ci]" y el tag "vX.Y.Z".
  *
  * Uso:
  *   node scripts/bump.js minor   # 0.1.0 -> 0.2.0 (feature/infra/docs, por defecto)
@@ -69,7 +69,7 @@ for (const rel of WORKSPACES) {
 writeFileSync(lockPath, `${JSON.stringify(lock, null, 2)}\n`);
 
 execSync(`git add package.json package-lock.json ${WORKSPACES.join(" ")}`, { cwd: REPO_ROOT, stdio: "inherit" });
-execSync(`git commit -m "chore(release): v${version}"`, { cwd: REPO_ROOT, stdio: "inherit" });
+execSync(`git commit -m "chore(release): v${version} [skip ci]"`, { cwd: REPO_ROOT, stdio: "inherit" });
 execSync(`git tag "v${version}"`, { cwd: REPO_ROOT, stdio: "inherit" });
 console.log(`Release local creado: commit + tag v${version}`);
 console.log("Publica con: git push origin <rama> && git push origin --tags");

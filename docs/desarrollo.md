@@ -57,7 +57,7 @@ Archivar = commitear TODO (código + specs) antes del merge; comprobar `git stat
   - `ci-ok` agrega el resultado; es el check estable para un futuro ruleset.
 - **Versionado**: solo al liberar en `main`. `scripts/determine-bump.js` decide
   `major|minor|patch` desde el último tag y `scripts/bump.js` actualiza root,
-  workspaces y `package-lock.json`, crea `chore(release): vX.Y.Z` y el tag.
+  workspaces y `package-lock.json`, crea `chore(release): vX.Y.Z [skip ci]` y el tag.
   Ya no hay workflow `version` ni bump por merge a `dev`.
 - **GHCR**: `:latest`, `:vX.Y.Z`, `:vX.Y` y `:node<versión>` solo desde `main`.
   No se publican `:pr-<n>` ni imágenes desde `dev`. Si un release falla tras
