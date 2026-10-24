@@ -1,7 +1,8 @@
 name: cleanup
 
-# Borra versiones de GHCR cuyos tags sean todos `pr-*` o el tag `dev`
-# obsoleto, con más de 7 días. No toca :latest, :vX.Y.Z, :vX.Y ni :node<ver>.
+# Borra versiones de GHCR cuyos tags sean todos `pr-*` o solo `dev` (si no
+# comparte versión con tags históricos), con más de 7 días. No toca :latest,
+# :vX.Y.Z, :vX.Y ni :node<ver>.
 on:
   schedule:
     - cron: "17 4 * * 0"
