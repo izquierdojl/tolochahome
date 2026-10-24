@@ -44,7 +44,7 @@ export function BarraGrupos({
       role="tablist"
       aria-label="Grupos"
       onKeyDown={teclado}
-      className="flex gap-1 overflow-x-auto border-b border-line"
+      className="flex gap-1 overflow-x-auto border-b border-line [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
       {grupos.map((g) => {
         const activa = g.id === activoId;

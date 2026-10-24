@@ -1,6 +1,6 @@
 {
   "name": "tolochahome",
-  "version": "0.13.2",
+  "version": "0.13.4",
   "private": true,
   "description": "Startpage autoalojada por usuario: grupos y favoritos speed-dial, búsqueda directa, claro/oscuro",
   "workspaces": [
@@ -28,6 +28,7 @@
   "overrides": {
     "@esbuild-kit/core-utils": {
       "esbuild": "0.25.12"
-    }
+    },
+    "body-parser": "2.4.0"
   }
 }

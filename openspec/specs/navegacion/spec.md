@@ -170,7 +170,7 @@ La web SHALL ofrecer en `/config` el ajuste «Disposición de grupos» con dos v
 
 ### Requirement: Barra de grupos con grupo activo
 
-En la disposición «Barra», la portada SHALL mostrar bajo el buscador una barra horizontal con una pestaña por grupo, con el nombre y el color del grupo como acento de la pestaña activa y desplazamiento horizontal cuando no caben, y debajo solo los enlaces del grupo activo con su nombre, su contador y el control «abrir todos»; no SHALL mostrarse controles de plegado.
+En la disposición «Barra», la portada SHALL mostrar bajo el buscador una barra horizontal con una pestaña por grupo, con el nombre y el color del grupo como acento de la pestaña activa y desplazamiento horizontal sin una barra de desplazamiento visible cuando no caben, y debajo solo los enlaces del grupo activo con su nombre, su contador y el control «abrir todos»; no SHALL mostrarse controles de plegado.
 
 #### Scenario: Un solo grupo a la vista
 
@@ -186,6 +186,11 @@ En la disposición «Barra», la portada SHALL mostrar bajo el buscador una barr
 
 - **WHEN** hay más grupos de los que caben en la barra
 - **THEN** se puede desplazar la barra en horizontal para ver y elegir todos
+
+#### Scenario: Barra de desplazamiento oculta
+
+- **WHEN** se muestra la barra de grupos, tanto si las pestañas caben como si desbordan
+- **THEN** no se muestra una barra de desplazamiento horizontal visible y el acento de la pestaña activa queda libre de solapamientos
 
 #### Scenario: Sin controles de plegado
 
