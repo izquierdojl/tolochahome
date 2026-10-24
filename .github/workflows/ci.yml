@@ -18,6 +18,7 @@ concurrency:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  NODE_MAJOR: "24"
 
 jobs:
   # Se ejecuta siempre: valida OpenSpec y decide qué trabajos hacen falta.
@@ -154,6 +155,19 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+      - name: Resolver última versión de Node
+        id: node
+        run: |
+          set -euo pipefail
+          NODE="$(curl -fsSL https://nodejs.org/dist/index.json \
+            | jq -r --arg major "v${NODE_MAJOR}." \
+              '[.[] | select(.version | startswith($major))][0].version' \
+            | sed 's/^v//')"
+          if [[ -z "$NODE" || "$NODE" == "null" ]]; then
+            echo "::error::No se pudo obtener la última versión de Node ${NODE_MAJOR}.x"
+            exit 1
+          fi
+          echo "version=$NODE" >> "$GITHUB_OUTPUT"
       - name: Decidir versión y crear release local
         id: version
         run: |
@@ -168,11 +182,9 @@ jobs:
             node scripts/bump.js "$BUMP"
             V="$(node -p "require('./package.json').version")"
           fi
-          NODE="$(node -v | sed 's/^v//')"
           {
             echo "version=$V"
             echo "tag=v$V"
-            echo "node=$NODE"
           } >> "$GITHUB_OUTPUT"
       - uses: docker/setup-buildx-action@v3
       - name: Login a GHCR
@@ -189,7 +201,7 @@ jobs:
           load: true
           tags: tolochahome:release
           build-args: |
-            NODE_VERSION=${{ steps.version.outputs.node }}
+            NODE_VERSION=${{ steps.node.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Smoke test en contenedor
@@ -230,7 +242,7 @@ jobs:
       - name: Publicar imagen
         env:
           VERSION: ${{ steps.version.outputs.version }}
-          NODE_VERSION: ${{ steps.version.outputs.node }}
+          NODE_VERSION: ${{ steps.node.outputs.version }}
         run: |
           set -euo pipefail
           BASE="${REGISTRY}/${IMAGE_NAME}"
