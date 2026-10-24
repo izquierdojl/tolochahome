@@ -4,16 +4,154 @@ import { useAuthStore } from "../stores/auth.js";
 import { useGroups, type Grupo } from "../hooks/useGroups.js";
 import { useMotores } from "../hooks/useBusqueda.js";
 import { usePlegados } from "../hooks/usePlegados.js";
+import { useCrearFavorito, usePrevisualizar } from "../hooks/useBookmarks.js";
+import { esApiError } from "../lib/api.js";
 import { BarraBusqueda } from "../components/BarraBusqueda.js";
 import { BarraGrupos } from "../components/BarraGrupos.js";
 import { SeccionFrecuentes, SeccionGrupo } from "../components/SeccionGrupo.js";
+import { dominioDe } from "../components/ImagenFavorito.js";
 import {
   leerDisposicion,
   leerModo,
   type DisposicionGrupos,
   type ModoEnlace,
 } from "../components/MosaicoFavorito.js";
-import { IconoDesplegar, IconoOjo, IconoOjoTachado, IconoPlegar } from "../components/Iconos.js";
+import {
+  IconoDesplegar,
+  IconoGuardar,
+  IconoMas,
+  IconoOjo,
+  IconoOjoTachado,
+  IconoPlegar,
+  IconoX,
+} from "../components/Iconos.js";
+
+function normalizarUrlEnlace(valor: string): string {
+  const entrada = valor.trim();
+  if (!entrada) throw new Error("Introduce una URL.");
+
+  const tieneEsquemaWeb = /^https?:\/\//i.test(entrada);
+  const esquemaNoWeb = /^[a-z][a-z\d+.-]*:(?!\d+(?:\/|$))/i.test(entrada);
+  const normalizada = tieneEsquemaWeb || esquemaNoWeb ? entrada : `https://${entrada}`;
+
+  let url: URL;
+  try {
+    url = new URL(normalizada);
+  } catch {
+    throw new Error("La URL no es válida.");
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    throw new Error("La URL debe usar http o https.");
+  }
+  const hostValido =
+    url.hostname.includes(".") ||
+    url.hostname.toLowerCase() === "localhost" ||
+    /^\[[\da-f:.]+\]$/i.test(url.hostname) ||
+    /^\d+(?:\.\d+){3}$/.test(url.hostname);
+  if (!hostValido) throw new Error("Introduce un dominio válido, como ejemplo.com.");
+  return url.toString();
+}
+
+function FormularioEnlaceRapido({
+  grupos,
+  grupoInicial,
+  guardando,
+  onGuardar,
+  onCerrar,
+}: {
+  grupos: Grupo[];
+  grupoInicial: string;
+  guardando: boolean;
+  onGuardar: (url: string, groupId: string) => Promise<void>;
+  onCerrar: () => void;
+}) {
+  const [url, setUrl] = useState("");
+  const [grupo, setGrupo] = useState(grupoInicial);
+  const [error, setError] = useState<string | null>(null);
+  const campoUrl = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    campoUrl.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    function tecla(e: KeyboardEvent) {
+      if (e.key === "Escape") onCerrar();
+    }
+    window.addEventListener("keydown", tecla);
+    return () => window.removeEventListener("keydown", tecla);
+  }, [guardando, onCerrar]);
+
+  async function enviar(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    let urlNormalizada: string;
+    try {
+      urlNormalizada = normalizarUrlEnlace(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "La URL no es válida.");
+      return;
+    }
+    try {
+      await onGuardar(urlNormalizada, grupo);
+    } catch (err) {
+      setError(
+        esApiError(err)
+          ? err.mensaje
+          : err instanceof Error
+            ? err.message
+            : "No se pudo guardar el enlace.",
+      );
+    }
+  }
+
+  return (
+    <form onSubmit={enviar} className="flex flex-wrap items-center gap-2" aria-label="Añadir enlace rápido">
+      <input
+        ref={campoUrl}
+        type="text"
+        inputMode="url"
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+        placeholder="Dirección web…"
+        aria-label="URL del enlace"
+        aria-invalid={Boolean(error)}
+        autoComplete="url"
+        required
+        className="min-h-[44px] min-w-40 flex-1 rounded border border-line bg-surface px-3 py-2"
+      />
+      <select
+        value={grupo}
+        onChange={(e) => setGrupo(e.target.value)}
+        aria-label="Grupo del enlace"
+        className="min-h-[44px] min-w-32 flex-1 rounded border border-line bg-surface px-2 py-2"
+      >
+        {grupos.map((g) => (
+          <option key={g.id} value={g.id}>{g.nombre}</option>
+        ))}
+      </select>
+      <button
+        type="submit"
+        disabled={guardando || !url.trim()}
+        title="Guardar enlace"
+        aria-label="Guardar enlace"
+        className="flex min-h-[44px] min-w-[44px] items-center justify-center text-brand disabled:opacity-50"
+      >
+        <IconoGuardar />
+      </button>
+      <button
+        type="button"
+        onClick={onCerrar}
+        title="Cancelar"
+        aria-label="Cancelar alta de enlace"
+        className="flex min-h-[44px] min-w-[44px] items-center justify-center text-muted"
+      >
+        <IconoX />
+      </button>
+      {error && <p role="alert" className="w-full text-sm text-ochre-600">{error}</p>}
+    </form>
+  );
+}
 
 function claveBusqueda(userId: string): string {
   return `tolochahome-busqueda-visible:${userId}`;
@@ -94,6 +232,9 @@ export function Home() {
   const usuario = useAuthStore((s) => s.usuario);
   const grupos = useGroups();
   const motores = useMotores();
+  const crearFavorito = useCrearFavorito();
+  const previsualizar = usePrevisualizar();
+  const [altaRapidaAbierta, setAltaRapidaAbierta] = useState(false);
   const [modo] = useState<ModoEnlace>(() => leerModo());
   const [disposicion] = useState<DisposicionGrupos>(() => leerDisposicion());
   const [busquedaVisible, setBusquedaVisible] = useState<boolean>(() =>
@@ -193,6 +334,10 @@ export function Home() {
   const listaGrupos = grupos.data ?? [];
   const pestanas = [PESTANA_FRECUENTES, ...listaGrupos];
   const grupoActivo = pestanas.find((g) => g.id === activo.id) ?? pestanas[0];
+  const grupoInicialRapido =
+    enBarra && grupoActivo?.id !== ID_FRECUENTES
+      ? grupoActivo?.id ?? listaGrupos[0]?.id ?? ""
+      : listaGrupos[0]?.id ?? "";
   const hayBarra = (motores.data?.length ?? 0) > 0;
   const conPlegado = enCarpetas && !enBarra && idsSecciones.length > 0;
   const textoPlegado = plegados.todoPlegado
@@ -209,6 +354,44 @@ export function Home() {
       className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded text-muted"
     >
       {plegados.todoPlegado ? <IconoDesplegar /> : <IconoPlegar />}
+    </button>
+  );
+
+  async function guardarEnlaceRapido(url: string, groupId: string) {
+    let titulo: string | null = null;
+    let imagen: string | undefined;
+    try {
+      const vista = await previsualizar.mutateAsync(url);
+      titulo = vista.titulo?.trim() || null;
+      if (titulo) imagen = vista.imagen ?? undefined;
+    } catch {
+      // La previsualización es opcional: se puede crear usando dominio y favicon.
+    }
+    titulo = titulo?.slice(0, 150) ?? dominioDe(url).slice(0, 150);
+    await crearFavorito.mutateAsync({
+      groupId,
+      titulo,
+      url,
+      ...(imagen ? { imagen } : {}),
+    });
+    setAltaRapidaAbierta(false);
+  }
+
+  function cerrarAltaRapida() {
+    setAltaRapidaAbierta(false);
+  }
+
+  const botonAltaRapida = listaGrupos.length > 0 && (
+    <button
+      type="button"
+      onClick={() => setAltaRapidaAbierta((abierta) => !abierta)}
+      aria-expanded={altaRapidaAbierta}
+      aria-controls="formulario-enlace-rapido"
+      title="Añadir enlace rápido"
+      aria-label="Añadir enlace rápido"
+      className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded text-brand"
+    >
+      <IconoMas />
     </button>
   );
 
@@ -341,6 +524,7 @@ export function Home() {
             >
               <IconoOjoTachado />
             </button>
+            {botonAltaRapida}
           </div>
           {hayBarra && <BarraBusqueda motores={motores.data!} />}
         </div>
@@ -359,7 +543,19 @@ export function Home() {
             >
               <IconoOjo />
             </button>
+            {botonAltaRapida}
           </div>
+        </div>
+      )}
+      {altaRapidaAbierta && listaGrupos.length > 0 && (
+        <div id="formulario-enlace-rapido" className="mx-auto w-full max-w-xl rounded border border-line bg-surface-raised p-3">
+          <FormularioEnlaceRapido
+            grupos={listaGrupos}
+            grupoInicial={grupoInicialRapido}
+            guardando={previsualizar.isPending || crearFavorito.isPending}
+            onGuardar={guardarEnlaceRapido}
+            onCerrar={cerrarAltaRapida}
+          />
         </div>
       )}
       {grupos.isPending && <p className="text-muted">Cargando…</p>}
