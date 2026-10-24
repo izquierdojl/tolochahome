@@ -1,7 +1,7 @@
 name: cleanup
 
-# Borra únicamente versiones de GHCR cuyos tags sean todos `pr-*` y tengan
-# más de 7 días. No toca :latest, :vX.Y.Z, :vX.Y ni :node<ver>.
+# Borra versiones de GHCR cuyos tags sean todos `pr-*` o el tag `dev`
+# obsoleto, con más de 7 días. No toca :latest, :vX.Y.Z, :vX.Y ni :node<ver>.
 on:
   schedule:
     - cron: "17 4 * * 0"
@@ -36,7 +36,7 @@ jobs:
           # shellcheck disable=SC2016 # $tags es una variable de jq, no de shell.
           gh api --paginate \
             "/users/${OWNER}/packages/container/${PACKAGE}/versions?per_page=100" \
-            --jq '.[] | select((.metadata.container.tags // []) as $tags | ($tags | length) > 0 and all($tags[]; startswith("pr-"))) | [.id, (.metadata.container.tags | join(",")), .updated_at] | @tsv' |
+            --jq '.[] | select((.metadata.container.tags // []) as $tags | ($tags | length) > 0 and (all($tags[]; startswith("pr-")) or $tags == ["dev"])) | [.id, (.metadata.container.tags | join(",")), .updated_at] | @tsv' |
           while IFS=$'\t' read -r id tags updated; do
             [[ -z "${id:-}" ]] && continue
             UPDATED_TS="$(date -u -d "$updated" +%s)"

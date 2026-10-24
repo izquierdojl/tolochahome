@@ -130,7 +130,8 @@ Formato semver `X.Y.Z`. Automático **al liberar en `main`**, no en cada merge a
 - `release.yml` (`release-node`) comprueba cada 6 horas la última versión
   `24.x` de Node y, si `:latest` lleva una anterior, la reconstruye y publica
   `:latest` y `:node<versión>` sin cambiar la versión de la app. `security.yml`
-  escanea `:latest` a diario y `cleanup.yml` borra tags `pr-*` de más de 7 días.
+  escanea `:latest` a diario y `cleanup.yml` borra tags `pr-*` y el `:dev`
+  obsoleto con más de 7 días.
 - Los skills de OpenSpec se regeneran con `openspec update`: las reglas de release viven aquí,
   en `AGENTS.md`, y se re-aplican a mano si un update las borra de algún skill.
 
