@@ -59,13 +59,16 @@ export function useFrecuentes() {
 
 function useInvalidar() {
   const cliente = useQueryClient();
-  return () => cliente.invalidateQueries({ queryKey: ["favoritos"] });
+  return () => {
+    cliente.invalidateQueries({ queryKey: ["favoritos"] });
+    cliente.invalidateQueries({ queryKey: ["grupos"] });
+  };
 }
 
 export function useCrearFavorito() {
   const invalidar = useInvalidar();
   return useMutation({
-    mutationFn: (datos: { groupId: string; titulo: string; url: string }) =>
+    mutationFn: (datos: { groupId: string; titulo: string; url: string; imagen?: string }) =>
       conSesion((token) =>
         api<{ favorito: Favorito }>("/api/v1/bookmarks", {
           method: "POST",
