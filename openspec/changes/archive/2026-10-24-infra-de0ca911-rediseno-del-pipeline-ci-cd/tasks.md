@@ -1,0 +1,11 @@
+- [x] Fase 0: timeout de Vitest, bcrypt de test y scripts verify
+- [x] Fase 1: CI con detección de rutas, concurrencia y sin Docker por defecto
+- [x] Fase 1: release gateado en main con un solo build y sin :pr-*
+- [x] Fase 1: eliminar versionado por merge y ajustar documentación
+- [x] Fase 2: carril docs-only y agregador ci-ok
+- [x] Fase 3: escaneo Trivy en release y diario
+- [x] Fase 3: retención conservadora de tags pr-*
+- [x] Actualizar AGENTS.md §8 y docs/desarrollo.md
+- [x] typecheck + lint + test + build
+- [x] Validar YAML y ejecutar la suite 4 veces en paralelo
+- [x] Archivar (commitear TODO y verificar `git status` limpio en lo tocado)

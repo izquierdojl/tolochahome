@@ -49,7 +49,26 @@ for (const rel of WORKSPACES) {
   writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
 }
 
-execSync(`git add package.json ${WORKSPACES.join(" ")}`, { cwd: REPO_ROOT, stdio: "inherit" });
+// Mantener el lock coherente con la versión publicada; si no, el siguiente
+// `npm ci` arrastra una versión antigua en la raíz y en los workspaces.
+const lockPath = join(REPO_ROOT, "package-lock.json");
+const lock = JSON.parse(readFileSync(lockPath, "utf8"));
+lock.version = version;
+if (lock.packages?.[""]) lock.packages[""].version = version;
+for (const rel of WORKSPACES) {
+  // En package-lock v3 los workspaces se indexan por su directorio
+  // (`apps/api`), no por la ruta del package.json.
+  const keys = new Set([
+    rel.replaceAll("\\", "/"),
+    dirname(rel).replaceAll("\\", "/"),
+  ]);
+  for (const key of keys) {
+    if (lock.packages?.[key]) lock.packages[key].version = version;
+  }
+}
+writeFileSync(lockPath, `${JSON.stringify(lock, null, 2)}\n`);
+
+execSync(`git add package.json package-lock.json ${WORKSPACES.join(" ")}`, { cwd: REPO_ROOT, stdio: "inherit" });
 execSync(`git commit -m "chore(release): v${version}"`, { cwd: REPO_ROOT, stdio: "inherit" });
 execSync(`git tag "v${version}"`, { cwd: REPO_ROOT, stdio: "inherit" });
 console.log(`Release local creado: commit + tag v${version}`);

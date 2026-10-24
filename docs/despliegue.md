@@ -4,9 +4,9 @@
 
 ## Imagen publicada en GHCR (recomendado)
 
-La imagen se publica en GHCR solo al hacer push o PR a `main`: el merge `dev`→`main`
-publica `:latest` (y `:vX.Y.Z`), y cada PR a `main` publica `:pr-<n>`
-(ver [desarrollo](desarrollo.md)).
+La imagen se publica en GHCR solo desde `main`: el merge `dev`→`main` publica
+`:latest`, `:vX.Y.Z`, `:vX.Y` y `:node<versión>` después de validar y escanear
+la imagen. No se publican imágenes de PR (ver [desarrollo](desarrollo.md)).
 
 ```bash
 docker compose pull

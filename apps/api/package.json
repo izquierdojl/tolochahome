@@ -1,6 +1,6 @@
 {
   "name": "@tolochahome/api",
-  "version": "0.13.4",
+  "version": "0.14.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src test",
     "test": "vitest run",
+    "test:changed": "vitest run --changed --passWithNoTests",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts"
   },
