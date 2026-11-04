@@ -87,6 +87,17 @@ export function IconoConfig() {
   );
 }
 
+export function IconoFeeds(props: React.SVGProps<SVGSVGElement>) {
+  return base(
+    props,
+    <>
+      <path d="M5 11a8 8 0 0 1 8 8" />
+      <path d="M5 5a14 14 0 0 1 14 14" />
+      <circle cx="6" cy="18" r="1.4" fill="currentColor" stroke="none" />
+    </>,
+  );
+}
+
 export function IconoInfo() {
   return base(
     {},

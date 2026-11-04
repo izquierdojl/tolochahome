@@ -32,6 +32,7 @@ const envSchema = z.object({
   STATIC_DIR: z.string().min(1).optional(),
   IMAGENES_DIR: z.string().min(1).optional(),
   PREVIEW_ALLOW_PRIVATE: z.string().optional(),
+  FEEDS_ALLOW_PRIVATE: z.string().optional(),
 });
 
 export interface AppConfig {
@@ -48,6 +49,7 @@ export interface AppConfig {
   staticDir?: string;
   imagenesDir: string;
   previewAllowPrivate: boolean;
+  feedsAllowPrivate: boolean;
   isProduction: boolean;
 }
 
@@ -67,6 +69,7 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): AppConfig {
     STATIC_DIR: source.STATIC_DIR,
     IMAGENES_DIR: source.IMAGENES_DIR,
     PREVIEW_ALLOW_PRIVATE: source.PREVIEW_ALLOW_PRIVATE,
+    FEEDS_ALLOW_PRIVATE: source.FEEDS_ALLOW_PRIVATE,
   });
   const isProduction = parsed.NODE_ENV === "production";
   if (isProduction) {
@@ -97,6 +100,7 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): AppConfig {
         ? join(tmpdir(), "tolochahome-imagenes")
         : join(dirname(parsed.DATABASE_PATH), "imagenes")),
     previewAllowPrivate: parsed.PREVIEW_ALLOW_PRIVATE?.toLowerCase() === "true",
+    feedsAllowPrivate: parsed.FEEDS_ALLOW_PRIVATE?.toLowerCase() === "true",
     isProduction,
   };
 }

@@ -10,6 +10,7 @@ import { PanelTiempo } from "./PanelTiempo.js";
 import {
   IconoAuto,
   IconoConfig,
+  IconoFeeds,
   IconoGestion,
   IconoInfo,
   IconoLuna,
@@ -161,6 +162,20 @@ export function AppShell() {
                 {Math.round(tiempoPorDefecto.datos.actual.temperatura)}°
               </span>
             </button>
+          )}
+          {autenticada && (
+            <NavLink
+              to="/feeds"
+              title="Feeds"
+              aria-label="Feeds"
+              className={({ isActive }) =>
+                `flex min-h-[44px] min-w-[44px] items-center justify-center rounded ${
+                  isActive ? "text-brand" : "text-soft"
+                }`
+              }
+            >
+              <IconoFeeds />
+            </NavLink>
           )}
           <span className="flex-1" />
           {autenticada && (

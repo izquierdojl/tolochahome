@@ -1,4 +1,5 @@
-import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
+import { integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 /** Cuentas de usuario. El email es único (comparación insensible a mayúsculas a nivel de aplicación). */
 export const users = sqliteTable("users", {
@@ -90,4 +91,48 @@ export const weatherLocations = sqliteTable("weather_locations", {
   lon: real("lon").notNull(),
   orden: integer("orden").notNull(),
   porDefecto: integer("por_defecto").notNull().default(0),
+});
+
+/** Entrada normalizada de un feed, guardada como caché de solo lectura. */
+export interface EntradaFeed {
+  id: string;
+  titulo: string;
+  enlace: string;
+  resumen: string | null;
+  publicadoEn: number | null;
+}
+
+/** Suscripciones RSS/Atom por usuario, con la última copia cacheada. */
+export const feeds = sqliteTable(
+  "feeds",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    url: text("url").notNull(),
+    titulo: text("titulo").notNull(),
+    sitioUrl: text("sitio_url"),
+    orden: integer("orden").notNull(),
+    /** Última descarga o 304 correcta (epoch ms). */
+    actualizadoEn: integer("actualizado_en"),
+    /** Último intento, para no reintentar un feed caído en cada petición. */
+    ultimoIntentoEn: integer("ultimo_intento_en"),
+    error: text("error"),
+    etag: text("etag"),
+    lastModified: text("last_modified"),
+    entradas: text("entradas", { mode: "json" })
+      .$type<EntradaFeed[]>()
+      .notNull()
+      .default(sql`'[]'`),
+  },
+  (tabla) => [uniqueIndex("feeds_user_url_unique").on(tabla.userId, tabla.url)],
+);
+
+/** Intervalo de actualización de feeds por usuario (minutos). */
+export const feedSettings = sqliteTable("feed_settings", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  intervaloMin: integer("intervalo_min").notNull().default(30),
 });

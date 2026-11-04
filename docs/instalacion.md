@@ -59,3 +59,4 @@ npm run db:migrate    # aplica migraciones pendientes
 | `REGISTRATION_ENABLED` | `true` | `false` cierra el registro (mantiene login) |
 | `CORS_ORIGINS` | `-` | Orígenes permitidos coma-separados; vacío desactiva CORS |
 | `IMAGENES_DIR` | `<dir-de-DATABASE_PATH>/imagenes` | Almacén de imágenes propias (volumen `/data`) |
+| `FEEDS_ALLOW_PRIVATE` | `false` | `true` permite feeds en red local (FreshRSS/Miniflux, tests) |
