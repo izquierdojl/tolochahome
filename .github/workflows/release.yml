@@ -1,77 +1,110 @@
-name: release-node
+name: release
 
-# Rebuild programado de la imagen cuando cambia el parche de Node 24.x.
-# El release normal (código + versión + imagen) vive en ci.yml y solo se
-# ejecuta en push a main, después de que `quality` haya pasado.
 on:
-  schedule:
-    - cron: "23 */6 * * *"
-  workflow_dispatch:
-    inputs:
-      force:
-        description: "Reconstruir aunque la versión de Node ya esté al día"
-        type: boolean
-        default: false
+  push:
+    tags:
+      - "v*"
 
 permissions:
   contents: read
   packages: write
-
-concurrency:
-  group: release-node
-  cancel-in-progress: false
+  checks: read
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   NODE_MAJOR: "24"
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  check:
+  # Las releases solo se publican cuando el tag apunta a un commit de `main`
+  # y el CI de ese commit ya está en verde.
+  preflight:
+    name: Comprobar main y CI
     runs-on: ubuntu-latest
     outputs:
-      needed: ${{ steps.compare.outputs.needed }}
-      version: ${{ steps.compare.outputs.version }}
-    steps:
-      - name: Login a GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Comparar Node de :latest con el último 24.x
-        id: compare
-        run: |
-          TARGET="$(curl -fsSL https://nodejs.org/dist/index.json \
-            | jq -r --arg major "v${NODE_MAJOR}." \
-              '[.[] | select(.version | startswith($major))][0].version' \
-            | sed 's/^v//')"
-          if [[ -z "$TARGET" || "$TARGET" == "null" ]]; then
-            echo "::error::No se pudo obtener la última versión de Node ${NODE_MAJOR}.x"
-            exit 1
-          fi
-          IMAGE="${REGISTRY}/${IMAGE_NAME}:latest"
-          CURRENT=""
-          if docker manifest inspect "$IMAGE" >/dev/null 2>&1; then
-            CURRENT="$(docker run --rm --entrypoint node "$IMAGE" -v 2>/dev/null | sed 's/^v//' || true)"
-          fi
-          echo "Node en :latest = ${CURRENT:-desconocido}; último ${NODE_MAJOR}.x = ${TARGET}"
-          NEEDED=true
-          if [[ "$CURRENT" == "$TARGET" && "${{ inputs.force }}" != "true" ]]; then
-            NEEDED=false
-          fi
-          echo "needed=$NEEDED" >> "$GITHUB_OUTPUT"
-          echo "version=$TARGET" >> "$GITHUB_OUTPUT"
-
-  release:
-    needs: check
-    if: always() && !cancelled() && needs.check.outputs.needed == 'true'
-    runs-on: ubuntu-latest
+      on_main: ${{ steps.check.outputs.on_main }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
-      - uses: docker/setup-buildx-action@v3
+          fetch-depth: 0
+      - id: check
+        name: Comprobar que el tag está en main
+        run: |
+          if ! git rev-parse --verify origin/main >/dev/null 2>&1; then
+            echo "on_main=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::No se encontró origin/main; no se publica release."
+            exit 0
+          fi
+          if git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "on_main=true" >> "$GITHUB_OUTPUT"
+            echo "El tag $GITHUB_REF_NAME está en main: se publica la release."
+          else
+            echo "on_main=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::El tag $GITHUB_REF_NAME no apunta a un commit de main; no se publica release."
+          fi
+      - name: Esperar a que el CI del commit esté en verde
+        if: steps.check.outputs.on_main == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          echo "Esperando el check 'quality' para $SHA..."
+          for i in $(seq 1 60); do
+            if ! RESULT="$(gh api "repos/$REPO/commits/$SHA/check-runs?per_page=100" \
+              --jq '[.check_runs[] | select(.name == "quality")] | sort_by(.started_at) | last | "\(.status // "") \(.conclusion // "")"' 2>/dev/null)"; then
+              RESULT="error"
+            fi
+            echo "Intento $i: ${RESULT:-sin datos}"
+            case "$RESULT" in
+              "completed success")
+                echo "CI verde: se puede publicar."
+                exit 0
+                ;;
+              "completed failure"|"completed cancelled"|"completed timed_out"|"completed action_required"|"completed stale"|"completed skipped")
+                echo "::error::El CI del commit $SHA no pasó ($RESULT). No se publica."
+                exit 1
+                ;;
+            esac
+            sleep 10
+          done
+          echo "::error::Timeout esperando el CI de $SHA (10 minutos)."
+          exit 1
+
+  release:
+    needs: preflight
+    if: needs.preflight.outputs.on_main == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up BuildKit
+        uses: docker/setup-buildx-action@v3
+      - name: Resolver Node y la base Alpine
+        id: node
+        run: |
+          NODE="$(curl -fsSL https://nodejs.org/dist/index.json \
+            | jq -r --arg major "v${NODE_MAJOR}." \
+              '[.[] | select(.version | startswith($major))][0].version' \
+            | sed 's/^v//')"
+          if [[ -z "$NODE" || "$NODE" == "null" ]]; then
+            echo "::error::No se pudo obtener la última versión de Node ${NODE_MAJOR}.x"
+            exit 1
+          fi
+          BASE_DIGEST="$(docker buildx imagetools inspect \
+            "docker.io/library/node:${NODE}-alpine" \
+            --format '{{.Manifest.Digest}}' | tr -d '\r\n')"
+          if [[ -z "$BASE_DIGEST" ]]; then
+            echo "::error::No se pudo obtener el digest de node:${NODE}-alpine"
+            exit 1
+          fi
+          {
+            echo "version=$NODE"
+            echo "base_digest=$BASE_DIGEST"
+          } >> "$GITHUB_OUTPUT"
       - name: Login a GHCR
         uses: docker/login-action@v3
         with:
@@ -84,19 +117,34 @@ jobs:
           context: .
           push: false
           load: true
-          tags: tolochahome:node-release
+          tags: tolochahome:release
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ github.ref_name }}
+            org.opencontainers.image.base.name=node:${{ steps.node.outputs.version }}-alpine
+            org.opencontainers.image.base.digest=${{ steps.node.outputs.base_digest }}
           build-args: |
-            NODE_VERSION=${{ needs.check.outputs.version }}
+            NODE_VERSION=${{ steps.node.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: Escanear imagen (Trivy)
+        uses: aquasecurity/trivy-action@0.36.0
+        with:
+          image-ref: tolochahome:release
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
       - name: Smoke test en contenedor
         run: |
           set -euo pipefail
-          docker run -d --name tolochahome-node-smoke \
+          docker run -d --name tolochahome-release \
             -e JWT_ACCESS_SECRET="smoke-access-secret-0123456789abcd" \
             -e JWT_REFRESH_SECRET="smoke-refresh-secret-9876543210wxyz" \
-            -p 127.0.0.1:3100:3000 tolochahome:node-release
-          cleanup() { docker rm -f tolochahome-node-smoke >/dev/null 2>&1 || true; }
+            -p 127.0.0.1:3100:3000 tolochahome:release
+          cleanup() { docker rm -f tolochahome-release >/dev/null 2>&1 || true; }
           trap cleanup EXIT
           for _ in $(seq 1 30); do
             if curl -fsS http://127.0.0.1:3100/api/v1/health >/dev/null; then
@@ -105,27 +153,25 @@ jobs:
             sleep 1
           done
           if ! curl -fsS http://127.0.0.1:3100/api/v1/health; then
-            docker logs tolochahome-node-smoke
+            docker logs tolochahome-release
             exit 1
           fi
           curl -fsS http://127.0.0.1:3100/ | grep -qiE "TolochaHome|tolochahome|<!doctype html"
-      - name: Escanear imagen (Trivy)
-        uses: aquasecurity/trivy-action@v0.36.0
-        with:
-          image-ref: tolochahome:node-release
-          format: table
-          exit-code: "1"
-          ignore-unfixed: true
-          vuln-type: os,library
-          severity: HIGH,CRITICAL
-      - name: Publicar :latest y :node<ver>
+      - name: Publicar tags en GHCR
         env:
-          NODE_VERSION: ${{ needs.check.outputs.version }}
+          NODE_VERSION: ${{ steps.node.outputs.version }}
         run: |
           set -euo pipefail
           BASE="${REGISTRY}/${IMAGE_NAME}"
-          for tag in "$BASE:latest" "$BASE:node$NODE_VERSION"; do
-            docker tag tolochahome:node-release "$tag"
+          VERSION="${GITHUB_REF_NAME#v}"
+          TAGS=(
+            "$BASE:latest"
+            "$BASE:v$VERSION"
+            "$BASE:v${VERSION%.*}"
+            "$BASE:node$NODE_VERSION"
+          )
+          for tag in "${TAGS[@]}"; do
+            docker tag tolochahome:release "$tag"
             docker push "$tag"
           done
-          echo "Imagen actualizada con Node $NODE_VERSION"
+          printf 'Tags publicados: %s\n' "${TAGS[*]}"

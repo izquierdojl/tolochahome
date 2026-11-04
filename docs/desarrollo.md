@@ -41,41 +41,40 @@ Crear changes con `scripts/new_change.sh <tipo> "<título>" [rama]`
 Al aplicar un change, sincronizar `todowrite` con el `tasks.md`.
 Archivar = commitear TODO (código + specs) antes del merge; comprobar `git status`.
 
-## CI/CD y versionado automático
+## CI/CD y versionado
 
 - **`ci`**: en `push` a `dev`/`main` y PR a `dev`/`main`. Usa concurrencia con
   cancelación en PR y `dev`; en `main` nunca cancela.
-  - `changes` se ejecuta siempre: valida OpenSpec y detecta si el cambio toca
-    código o Docker.
+  - `changes` valida OpenSpec y usa `dorny/paths-filter` para detectar si el
+    cambio toca código o Docker.
   - `quality` ejecuta `npm audit`, typecheck, lint, tests y build solo si hay
-    código. Los cambios solo de docs/openspec se quedan en `changes`.
-  - `docker` hace smoke de la imagen solo si cambian `Dockerfile`, entrypoint,
-    lockfile, `tsconfig` o migraciones. No construye Docker en cada push.
-  - `release` solo corre en push a `main` **después de `quality`**: decide el
-    bump, construye una única imagen, la prueba, la escanea con Trivy y publica
-    el commit/tag y la imagen.
-  - `ci-ok` agrega el resultado; es el check estable para un futuro ruleset.
-- **Versionado**: solo al liberar en `main`. `scripts/determine-bump.js` decide
-  `major|minor|patch` desde el último tag y `scripts/bump.js` actualiza root,
-  workspaces y `package-lock.json`, crea `chore(release): vX.Y.Z [skip ci]` y el tag.
-  Ya no hay workflow `version` ni bump por merge a `dev`.
-- **GHCR**: `:latest`, `:vX.Y.Z`, `:vX.Y` y `:node<versión>` solo desde `main`.
-  No se publican `:pr-<n>` ni imágenes desde `dev`. Si un release falla tras
-  publicar el commit/tag (por ejemplo, al subir la imagen), una re-ejecución
-  reutiliza el tag de `HEAD` y reconstruye la misma versión.
-- **`release-node`**: cada 6 horas compara la última `24.x` de
-  `nodejs.org/dist/index.json` con el Node de `:latest`; si cambió, reconstruye
-  y publica `:latest` y `:node<versión>` sin tocar la versión de la app.
-  Manual: `gh workflow run release.yml -f force=true`.
-- **`security`**: escanea `:latest` con Trivy a diario (HIGH/CRITICAL, solo
-  vulnerabilidades con fix). También se puede lanzar a mano.
-- **`cleanup`**: semanal borra versiones de GHCR cuyos tags sean solo `pr-*`
-  o solo `dev` (si no comparte versión con tags históricos), con más de 7 días.
-  No toca `:latest`, semver ni `:node<ver>`. Se puede lanzar a mano con
-  `dry_run` para revisar antes.
-- **Ruleset**: `main-ci` exige `ci-ok` en `main`. El usuario y la deploy key
-  `release-bot` tienen bypass. El job `release` hace checkout y push con el
-  secreto `RELEASE_DEPLOY_KEY`; `GITHUB_TOKEN` solo se usa para GHCR.
+    código. Se salta en PR `dev→main` porque el mismo SHA ya se validó en `dev`.
+  - `docker` construye, prueba y escanea la imagen solo en PRs que tocan
+    `Dockerfile`, entrypoint, lockfile, `tsconfig` o migraciones. No construye
+    Docker en cada push ni publica imágenes desde integración.
+  - `ci-ok` agrega el resultado; es el check del ruleset `main-ci`.
+- **Versionado**: después de fusionar en `main`, ejecutar
+  `node scripts/bump.js minor|patch|major` (o `npm run release:spec|fix|major`).
+  El script actualiza root, workspaces y `package-lock.json`, crea
+  `chore: release vX.Y.Z` y el tag. Después:
+  `git push origin main`, esperar a que `quality` esté verde y
+  `git push origin --tags`.
+- **`release`**: se dispara con el tag `v*`. `preflight` comprueba que el tag
+  está en `main` y que `quality` está verde; después construye una sola imagen,
+  la prueba, la escanea con Trivy y publica `:latest`, `:vX.Y.Z`, `:vX.Y` y
+  `:node<versión>`. Si el tag no está en `main` o el CI falla, no publica.
+- **`node-image`**: mantiene la base Node/Alpine de la última release. Se
+  ejecuta al cambiar `.nvmrc` o el workflow, a diario y a mano. Compara la
+  última `24.x` y el digest de `node:24-alpine` con los labels de `:latest`;
+  si cambia, reconstruye el tag de la última release (nunca `main`) y publica
+  `:latest` y `:node<versión>`. Manual:
+  `gh workflow run node-image.yml --ref main -f force=true`.
+- **`security`**: escanea `:latest` a diario con Trivy y sube los resultados
+  a code scanning (SARIF). También se puede lanzar a mano.
+- **Retención**: no hay cleanup automático; mantener las últimas 10 releases
+  desde la configuración del paquete en GHCR.
+- **Ruleset**: `main-ci` exige `ci-ok` en `main`. El usuario puede saltarlo
+  para empujar el commit/tag de release; ya no se usa deploy key.
 
 ## Dependencias y seguridad
 
@@ -109,17 +108,19 @@ Reglas semver (`AGENTS.md` §8):
 | `BREAKING CHANGE` / `!` | `major` |
 | `infra/docs/refactor/test/chore` | `patch` salvo `BREAKING` |
 
-El versionado normal lo hace el job `release` al fusionar en `main`. Los
-scripts `release:*` quedan solo para una emergencia en la que ese job no pueda
-ejecutarse; en ese caso hay que crear el tag sobre `main` y construir la imagen
-a mano:
+El versionado normal es manual, después de fusionar en `main`:
 
 ```bash
 npm run release:spec   # minor
 npm run release:fix    # patch
 npm run release:major  # major
-git push origin main --follow-tags
+git push origin main
+# esperar a que el check quality del commit esté verde
+git push origin --tags
 ```
+
+El tag `v*` dispara `release` → GHCR. El `preflight` no publica si el tag no
+está en `main` o si `quality` no está verde.
 
 **A prueba de `openspec update`**: las reglas de release viven en `AGENTS.md`
 (que openspec no regenera). Si un update borra pasos de algún skill,

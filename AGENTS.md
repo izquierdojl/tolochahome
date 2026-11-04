@@ -44,8 +44,7 @@ scripts/
 ├── new_change.sh      Crea changes (DEFAULT_BRANCH=dev)
 ├── spec_id.py         Genera id8 hex único
 ├── check_changes.sh   Valida meta.yaml (CI)
-├── bump.js            Sube versión root + workspaces + lock, commit + tag
-└── determine-bump.js  Decide major|minor|patch desde commits (job release de ci.yml)
+└── bump.js            Sube versión root + workspaces + lock, commit + tag
 docs/
 ├── instalacion.md  Requisitos, arranque local, variables de entorno
 ├── despliegue.md   Docker, GHCR y proxy inverso (obligatorio leer para exponer)
@@ -113,28 +112,31 @@ Los cambios pequeños se archivan pronto: un change = una capacidad. Los módulo
 
 ## 8. Versionado y releases
 
-Formato semver `X.Y.Z`. Automático **al liberar en `main`**, no en cada merge a `dev`:
+Formato semver `X.Y.Z`. La versión se sube **después de fusionar en `main`**, no en cada merge a `dev`:
 
 - `feat` o tipo `feature` → `minor`; `fix`/`bug` → `patch`; `BREAKING CHANGE`/`!` → `major`.
 - `infra`/`docs`/`refactor`/`test`/`chore` → `patch` salvo `BREAKING`.
-- Flujo: merge `dev`→`main` → `ci` valida (quality) → el job `release` de
-  `ci.yml` analiza los commits desde el último tag y ejecuta
-  `node scripts/bump.js <bump>`. El script sincroniza versión en root,
-  workspaces y `package-lock.json`, crea `chore(release): vX.Y.Z [skip ci]` + tag y el
-  job construye, prueba y escanea **una sola imagen**. Solo entonces publica
-  el commit/tag y la imagen en GHCR.
-- GHCR: `:latest`, `:vX.Y.Z`, `:vX.Y` y `:node<versión>` solo desde `main`.
-  No se publican `:pr-<n>` ni imágenes desde `dev`. Si un release falla
-  después de publicar el commit/tag (por ejemplo, al subir la imagen), una
-  re-ejecución reutiliza el tag de `HEAD` y reconstruye la misma versión.
-- `main` tiene el ruleset `main-ci`, que exige el check `ci-ok`. El push del
-  commit/tag de versión usa la deploy key `release-bot` (secreto
-  `RELEASE_DEPLOY_KEY`) con bypass; el usuario también puede saltarlo.
-- `release.yml` (`release-node`) comprueba cada 6 horas la última versión
-  `24.x` de Node y, si `:latest` lleva una anterior, la reconstruye y publica
-  `:latest` y `:node<versión>` sin cambiar la versión de la app. `security.yml`
-  escanea `:latest` a diario y `cleanup.yml` borra tags `pr-*` y, si no comparte
-  versión con tags históricos, el `:dev` obsoleto con más de 7 días.
+- Flujo: merge `dev`→`main` → en `main`, ejecutar `node scripts/bump.js <bump>`.
+  El script sincroniza versión en root, workspaces y `package-lock.json`, crea
+  `chore: release vX.Y.Z` + tag. Después: `git push origin main`, esperar a que
+  el check `quality` del commit esté verde y `git push origin --tags`.
+- `ci.yml` solo valida (`changes`, `quality`, `docker`, `ci-ok`); no publica ni
+  escribe en `main`.
+- `release.yml` se dispara con el tag `v*`: un `preflight` exige que el tag
+  apunte a un commit de `main` y que `quality` esté verde; después construye,
+  prueba y escanea **una sola imagen** y publica `:latest`, `:vX.Y.Z`, `:vX.Y`
+  y `:node<versión>`. Si el CI falla o el tag no está en `main`, no publica.
+- GHCR: solo se publica desde `main`; no se publican `:pr-<n>` ni imágenes
+  desde `dev`. La retención es manual: mantener las últimas 10 releases.
+- `main` tiene el ruleset `main-ci`, que exige `ci-ok`. El usuario puede
+  saltarlo para empujar el commit/tag de release; ya no se usa deploy key.
+- `node-image.yml` mantiene la base Node/Alpine de **la última release**:
+  se ejecuta al cambiar `.nvmrc` o el workflow, a diario y a mano. Compara la
+  última `24.x` y el digest de `node:24-alpine` con los labels de `:latest`;
+  si cambia, reconstruye el tag de la última release (nunca `main`) y publica
+  `:latest` y `:node<versión>`. Manual: `gh workflow run node-image.yml --ref main -f force=true`.
+- `security.yml` escanea `:latest` a diario con Trivy y sube los resultados a
+  code scanning (SARIF).
 - Los skills de OpenSpec se regeneran con `openspec update`: las reglas de release viven aquí,
   en `AGENTS.md`, y se re-aplican a mano si un update las borra de algún skill.
 

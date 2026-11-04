@@ -1,0 +1,146 @@
+name: node-image
+
+# Mantiene al día la base Node/Alpine de la última release publicada.
+# - push a main que toque .nvmrc o este workflow;
+# - a diario, comparando la última 24.x y el digest de node:24-alpine con :latest;
+# - manualmente, con opción de forzar.
+#
+# Reconstruye el tag de la última release, nunca main, para que :latest siga
+# siendo código liberado.
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".nvmrc"
+      - ".github/workflows/node-image.yml"
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Republicar aunque Node y la base ya estén al día"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  NODE_MAJOR: "24"
+
+concurrency:
+  group: node-image
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Resolver versión de Node
+    runs-on: ubuntu-latest
+    outputs:
+      build: ${{ steps.compare.outputs.build }}
+      version: ${{ steps.compare.outputs.version }}
+      base_digest: ${{ steps.compare.outputs.base_digest }}
+    steps:
+      - name: Set up BuildKit
+        uses: docker/setup-buildx-action@v3
+      - name: Login a GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Comparar la imagen :latest con el último Node y su base
+        id: compare
+        run: |
+          TARGET="$(curl -fsSL https://nodejs.org/dist/index.json \
+            | jq -r --arg major "v${NODE_MAJOR}." \
+              '[.[] | select(.version | startswith($major))][0].version' \
+            | sed 's/^v//')"
+          if [[ -z "$TARGET" || "$TARGET" == "null" ]]; then
+            echo "::error::No se pudo obtener la última versión de Node ${NODE_MAJOR}.x"
+            exit 1
+          fi
+          BASE_DIGEST="$(docker buildx imagetools inspect \
+            "docker.io/library/node:${NODE_MAJOR}-alpine" \
+            --format '{{.Manifest.Digest}}' | tr -d '\r\n')"
+          if [[ -z "$BASE_DIGEST" ]]; then
+            echo "::error::No se pudo obtener el digest de node:${NODE_MAJOR}-alpine"
+            exit 1
+          fi
+          BUILD=true
+          if [[ "${{ github.event_name }}" != "push" ]]; then
+            IMAGE="${REGISTRY}/${IMAGE_NAME}:latest"
+            LABELS="$(docker buildx imagetools inspect "$IMAGE" \
+              --format '{{json .Image.Config.Labels}}' 2>/dev/null || echo '{}')"
+            CURRENT="$(printf '%s' "$LABELS" \
+              | jq -r '.["org.opencontainers.image.base.name"] // empty' \
+              | sed -nE 's/^node:([0-9.]+)-alpine$/\1/p')"
+            CURRENT_DIGEST="$(printf '%s' "$LABELS" \
+              | jq -r '.["org.opencontainers.image.base.digest"] // empty')"
+            echo "Node en :latest = ${CURRENT:-desconocido}; último ${NODE_MAJOR}.x = ${TARGET}"
+            echo "Base en :latest = ${CURRENT_DIGEST:-desconocida}; node:${NODE_MAJOR}-alpine = ${BASE_DIGEST}"
+            if [[ "$CURRENT" == "$TARGET" && "$CURRENT_DIGEST" == "$BASE_DIGEST" \
+                  && "${{ inputs.force }}" != "true" ]]; then
+              BUILD=false
+            fi
+          fi
+          {
+            echo "build=$BUILD"
+            echo "version=$TARGET"
+            echo "base_digest=$BASE_DIGEST"
+          } >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Publicar imagen
+    needs: check
+    if: needs.check.outputs.build == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          # Necesitamos todos los tags para resolver la última release.
+          fetch-depth: 0
+      - name: Resolver la última release
+        id: release
+        run: |
+          TAG="$(git tag --merged origin/main --list 'v*' --sort=-v:refname | head -1)"
+          if [[ -z "$TAG" ]]; then
+            echo "::error::No hay ningún tag de release para reconstruir."
+            exit 1
+          fi
+          git checkout "$TAG"
+          {
+            echo "tag=$TAG"
+            echo "version=${TAG#v}"
+            echo "revision=$(git rev-parse HEAD)"
+          } >> "$GITHUB_OUTPUT"
+      - name: Set up BuildKit
+        uses: docker/setup-buildx-action@v3
+      - name: Login a GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build y push de la imagen
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          build-args: |
+            NODE_VERSION=${{ needs.check.outputs.version }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:node${{ needs.check.outputs.version }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ steps.release.outputs.revision }}
+            org.opencontainers.image.version=${{ steps.release.outputs.version }}
+            org.opencontainers.image.base.name=node:${{ needs.check.outputs.version }}-alpine
+            org.opencontainers.image.base.digest=${{ needs.check.outputs.base_digest }}
+          cache-from: type=gha,scope=node-image
+          cache-to: type=gha,mode=max,scope=node-image
