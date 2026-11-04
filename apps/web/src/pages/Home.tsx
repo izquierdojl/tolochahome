@@ -169,6 +169,9 @@ const DURACION_DESLIZAMIENTO = 200;
 /** Factor de resistencia al arrastrar hacia un extremo sin grupo contiguo. */
 const RESISTENCIA_EXTREMO = 0.35;
 
+/** Ventana (ms) para neutralizar el click sintético del gesto recién terminado. */
+const SUPRESION_CLICK_MS = 300;
+
 /** Id reservado de la sección «Frecuentes»: no colisiona con el UUID de un grupo. */
 const ID_FRECUENTES = "__frecuentes";
 
@@ -257,7 +260,7 @@ export function Home() {
   const panel = useRef<HTMLDivElement>(null);
   const toque = useRef<{ x: number; y: number } | null>(null);
   const arrastrandoH = useRef(false);
-  const suprimirClick = useRef(false);
+  const suprimirClickHasta = useRef(0);
   const temporizador = useRef<number | null>(null);
   const [fase, setFase] = useState<{ tipo: "reposo" | "saliendo" | "entrando"; signo: number }>({
     tipo: "reposo",
@@ -449,6 +452,8 @@ export function Home() {
       arrastrandoH.current = false;
       return;
     }
+    // Un gesto nuevo invalida cualquier click pendiente del gesto anterior.
+    suprimirClickHasta.current = 0;
     const t = e.touches[0];
     toque.current = { x: t.clientX, y: t.clientY };
     arrastrandoH.current = false;
@@ -470,6 +475,11 @@ export function Home() {
     fijarDesplazamiento(hayVecino ? dx : dx * RESISTENCIA_EXTREMO);
   }
 
+  /** Neutraliza el click sintético que el navegador pudiera emitir al soltar el gesto. */
+  function armarSupresionClick() {
+    suprimirClickHasta.current = performance.now() + SUPRESION_CLICK_MS;
+  }
+
   function toqueFin(e: React.TouchEvent) {
     const inicio = toque.current;
     toque.current = null;
@@ -484,13 +494,13 @@ export function Home() {
       const i = pestanas.findIndex((g) => g.id === grupoActivo.id);
       const j = dx > 0 ? i - 1 : i + 1;
       const destino = j >= 0 && j < pestanas.length ? pestanas[j] : undefined;
-      suprimirClick.current = true;
+      armarSupresionClick();
       if (i >= 0 && destino) {
         iniciarCambio(dx > 0 ? 1 : -1, destino.id);
         return;
       }
     }
-    if (arrastro) suprimirClick.current = true;
+    if (arrastro) armarSupresionClick();
     rebotar();
   }
 
@@ -501,8 +511,8 @@ export function Home() {
   }
 
   function capturarClick(e: React.MouseEvent) {
-    if (suprimirClick.current) {
-      suprimirClick.current = false;
+    if (performance.now() < suprimirClickHasta.current) {
+      suprimirClickHasta.current = 0;
       e.preventDefault();
       e.stopPropagation();
     }
