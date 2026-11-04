@@ -19,12 +19,17 @@ En desarrollo, Vite hace proxy de `/api` a la API.
 
 - **Almacenamiento**: SQLite vía Drizzle (`users`, `refresh_tokens`,
   `password_reset_tokens`, `groups`, `bookmarks`, `search_engines`,
-  `weather_locations`).
+  `weather_locations`, `feeds`, `feed_settings`).
 - **Sesiones**: access token JWT (15 min) en memoria + cookie httpOnly
   `tolocha-refresh` rotatoria. `REGISTRATION_ENABLED=false` cierra el alta.
 - **Startpage**: grupos + speed dial de favoritos con previsualización
   (favicon / og:image o inicial), contador de visitas, búsqueda directa
-  (Google, Wikipedia, DuckDuckGo + personalizados), tema `auto|light|dark`.
+  (Google, Wikipedia, DuckDuckGo + personalizados), lector rápido de feeds
+  RSS/Atom y tema `auto|light|dark`.
+- **Feeds RSS/Atom**: descarga y parseo en la API (`lib/feeds.ts`), con
+  autodescubrimiento desde la URL del sitio, caché de hasta 30 entradas por
+  feed en SQLite y refresco perezoso al abrir `/feeds`; usa
+  `fast-xml-parser` y guarda SSRF en las descargas.
 - **Import/export**: Netscape HTML (intercambio con navegadores) + JSON propio.
 
 ## Referencia rápida

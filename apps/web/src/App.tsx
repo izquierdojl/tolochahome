@@ -3,6 +3,7 @@ import { AppShell } from "./components/AppShell.js";
 import { useAuthStore } from "./stores/auth.js";
 import { Home } from "./pages/Home.js";
 import { Gestion } from "./pages/Gestion.js";
+import { Feeds } from "./pages/Feeds.js";
 import { Config } from "./pages/Config.js";
 import { AcercaDe } from "./pages/AcercaDe.js";
 import { Login } from "./pages/Login.js";
@@ -35,6 +36,14 @@ export function App() {
             element={
               <RequireAuth>
                 <Gestion />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/feeds"
+            element={
+              <RequireAuth>
+                <Feeds />
               </RequireAuth>
             }
           />

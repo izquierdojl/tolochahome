@@ -70,7 +70,7 @@ La web SHALL ofrecer `/gestion` tras `RequireAuth` con la gestión completa (gru
 
 ### Requirement: Navegación por iconos
 
-La cabecera SHALL navegar con iconos SVG (inicio, usuario, tema, configuración, acerca de), con etiqueta accesible y estado activo visible, sin controles en texto. El icono de configuración SHALL ser una rueda dentada, claramente distinta del sol del tema claro. En viewport estrecho (móvil) la cabecera SHALL colapsar la navegación en un botón de menú que abre un panel desplegable con los mismos destinos como filas etiquetadas (icono + texto); el conmutador de tema SHALL seguir visible fuera del panel.
+La cabecera SHALL navegar con iconos SVG (inicio, feeds, usuario, tema, configuración, acerca de), con etiqueta accesible y estado activo visible, sin controles en texto. El icono de Feeds SHALL situarse en la cabecera, junto al chip del tiempo cuando exista, y SHALL llevar a `/feeds`. El icono de configuración SHALL ser una rueda dentada, claramente distinta del sol del tema claro. En viewport estrecho (móvil) la cabecera SHALL colapsar la navegación en un botón de menú que abre un panel desplegable con los destinos de navegación (gestión, cuenta, acerca de y, sin sesión, entrar) como filas etiquetadas (icono + texto); el conmutador de tema y el acceso a Feeds SHALL seguir visibles fuera del panel.
 
 #### Scenario: Iconos con estado
 
@@ -90,7 +90,7 @@ La cabecera SHALL navegar con iconos SVG (inicio, usuario, tema, configuración,
 #### Scenario: Menú en viewport estrecho
 
 - **WHEN** se ve la cabecera en un viewport estrecho de móvil
-- **THEN** aparece el botón de menú y los destinos están en su panel, sin botones amontonados ni solapados en la barra
+- **THEN** aparece el botón de menú y los destinos de navegación están en su panel, sin botones amontonados ni solapados en la barra
 
 #### Scenario: Elegir destino en el menú
 
@@ -102,9 +102,24 @@ La cabecera SHALL navegar con iconos SVG (inicio, usuario, tema, configuración,
 - **WHEN** el panel está abierto y se pulsa `Escape` o fuera de él
 - **THEN** el panel se cierra y el foco vuelve al botón de menú
 
+#### Scenario: Icono de Feeds con sesión
+
+- **WHEN** un usuario autenticado tiene al menos una suscripción
+- **THEN** la cabecera muestra el icono de Feeds en la zona del tiempo, con etiqueta accesible, y lo marca como activo al visitar `/feeds`
+
+#### Scenario: Sin suscripciones
+
+- **WHEN** un usuario autenticado no tiene ninguna suscripción
+- **THEN** la cabecera sigue mostrando el icono de Feeds y al pulsarlo se abre `/feeds`
+
+#### Scenario: Feeds en móvil
+
+- **WHEN** se ve la cabecera en un viewport estrecho de móvil
+- **THEN** el icono de Feeds sigue visible en la zona del tiempo, fuera del panel de menú
+
 ### Requirement: Secciones de configuración y acerca de
 
-La web SHALL ofrecer `/config` (apertura misma/nueva pestaña, tamaño de enlaces, estado del registro) y `/acerca-de` (versión servida por la API, repositorio y detalles), protegidas tras sesión.
+La web SHALL ofrecer `/config` (apertura misma/nueva pestaña, tamaño de enlaces, gestión de feeds con su periodo de actualización y estado del registro) y `/acerca-de` (versión servida por la API, repositorio y detalles), protegidas tras sesión.
 
 #### Scenario: Acerca de con versión
 
@@ -114,7 +129,12 @@ La web SHALL ofrecer `/config` (apertura misma/nueva pestaña, tamaño de enlace
 #### Scenario: Ajustes en configuración
 
 - **WHEN** se visita `/config`
-- **THEN** se puede elegir la apertura de enlaces y el tamaño de enlaces, y se informa si el registro está abierto
+- **THEN** se puede elegir la apertura de enlaces y el tamaño de enlaces, gestionar los feeds y su periodo de actualización, y se informa si el registro está abierto
+
+#### Scenario: Feeds en configuración
+
+- **WHEN** un usuario autenticado entra en `/config`
+- **THEN** puede añadir y borrar canales RSS/Atom y elegir cada cuánto se actualizan
 
 ### Requirement: Tamaño de enlaces
 

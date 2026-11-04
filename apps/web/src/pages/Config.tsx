@@ -4,6 +4,7 @@ import { esApiError } from "../lib/api.js";
 import { useAuthStore } from "../stores/auth.js";
 import { IconoConfig } from "../components/Iconos.js";
 import { GestionCiudades } from "../components/GestionCiudades.js";
+import { GestionFeeds } from "../components/GestionFeeds.js";
 import { leerApertura, leerTamano, guardarTamano, leerModo, guardarModo, leerDisposicion, guardarDisposicion, TAMANOS_ENLACE, type Apertura, type TamanoEnlace, type ModoEnlace, type DisposicionGrupos } from "../components/MosaicoFavorito.js";
 
 interface Salud {
@@ -231,6 +232,7 @@ export function Config() {
         </p>
       </section>
       <GestionCiudades />
+      <GestionFeeds />
       <section className="space-y-2 rounded border border-line p-4">
         <h2 className="font-bold">Registro</h2>
         <p className="text-sm text-muted">
