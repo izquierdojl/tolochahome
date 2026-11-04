@@ -252,8 +252,13 @@ En la disposición «Barra», el usuario SHALL poder cambiar de grupo pinchando 
 
 #### Scenario: Toque normal sobre un enlace
 
-- **WHEN** el gesto no supera el umbral de arrastre
-- **THEN** se trata como toque y el enlace se abre según la preferencia de apertura
+- **WHEN** el usuario toca un enlace sin arrastrar
+- **THEN** el enlace se abre según la preferencia de apertura
+
+#### Scenario: Toque tras cambiar de grupo
+
+- **WHEN** el usuario cambia de grupo con un arrastre y después toca un enlace del grupo mostrado
+- **THEN** el enlace se abre con un solo toque, según la preferencia de apertura
 
 #### Scenario: Cambio por teclado
 
@@ -296,7 +301,7 @@ La portada `/` SHALL ofrecer un control de plegado global que plega o despliega 
 
 ### Requirement: Arrastre visual del contenido del grupo en modo barra
 
-En la disposición «Barra», mientras se arrastra el dedo en horizontal sobre el contenido del grupo activo, el contenido SHALL desplazarse acompañando al gesto; si se suelta sin superar el umbral de cambio, SHALL volver a su posición y el gesto SHALL tratarse como un toque normal.
+En la disposición «Barra», mientras se arrastra el dedo en horizontal sobre el contenido del grupo activo, el contenido SHALL desplazarse acompañando al gesto; si se suelta sin superar el umbral de cambio, SHALL volver a su posición sin cambiar de grupo ni abrir ningún enlace, y el siguiente toque SHALL abrir el enlace o control tocado según la preferencia de apertura.
 
 #### Scenario: El contenido sigue al dedo
 
@@ -306,7 +311,12 @@ En la disposición «Barra», mientras se arrastra el dedo en horizontal sobre e
 #### Scenario: Vuelta a su sitio sin cambio
 
 - **WHEN** el usuario suelta el dedo sin superar el umbral de cambio
-- **THEN** el contenido vuelve a su posición con una transición breve, no cambia de grupo y el gesto se trata como toque normal
+- **THEN** el contenido vuelve a su posición con una transición breve, no cambia de grupo y no abre ningún enlace
+
+#### Scenario: Toque tras un arrastre corto
+
+- **WHEN** el usuario toca un enlace después de un arrastre que no superó el umbral de cambio
+- **THEN** el enlace se abre con un solo toque, según la preferencia de apertura
 
 #### Scenario: Resistencia en los extremos
 
