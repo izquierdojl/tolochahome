@@ -98,6 +98,18 @@ export function IconoFeeds(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
+export function IconoCita(props: React.SVGProps<SVGSVGElement>) {
+  return base(
+    props,
+    <>
+      <circle cx="7.5" cy="15.5" r="2.3" fill="currentColor" />
+      <circle cx="16.5" cy="15.5" r="2.3" fill="currentColor" />
+      <path d="M5.2 15.5c0-3.8 1.4-6 4.6-7.5" />
+      <path d="M14.2 15.5c0-3.8 1.4-6 4.6-7.5" />
+    </>,
+  );
+}
+
 export function IconoInfo() {
   return base(
     {},

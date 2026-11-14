@@ -34,6 +34,7 @@ Prefijo: `/api/v1`.
 | `DELETE` | `/api/v1/feeds/:id` | Borrar una suscripción propia |
 | `PUT` | `/api/v1/feeds/ajustes` | Cambiar el intervalo de actualización (15–720 min) |
 | `POST` | `/api/v1/feeds/refrescar` | Forzar la actualización de todos los feeds |
+| `GET` | `/api/v1/cita` | Cita del día de es.wikiquote (pública, sin sesión). `200 { cita }` o `503 CITA_NO_DISPONIBLE` |
 | `GET` | `/api/v1/sugerencias?motor=&q=` | Sugerencias normalizadas |
 | `POST` | `/api/v1/import` | Importar Netscape HTML o JSON |
 | `GET` | `/api/v1/export?formato=html\|json` | Exportar como adjunto |
@@ -41,5 +42,7 @@ Prefijo: `/api/v1`.
 Errores con formato `{ error: { codigo, mensaje } }` en español.
 
 Los feeds se descargan y parsean en la API (RSS 2.0, Atom y RSS 1.0/RDF). El alta acepta la URL del feed o la del sitio con autodescubrimiento y guarda hasta 30 entradas por feed. Por defecto se rechazan hosts de red privada; `FEEDS_ALLOW_PRIVATE=true` permite feeds locales.
+
+`GET /api/v1/cita` no requiere sesión. Devuelve `{ cita: { texto, autor, descripcion?, fecha, enlace, atribucion: { fuente, licencia, licenciaUrl } } }`, con la «Cita del día» de [es.wikiquote](https://es.wikiquote.org) (licencia CC BY-SA 4.0, que debe mostrarse junto a la cita). La respuesta lleva `Cache-Control: public, max-age=600`. Si no hay ninguna cita disponible responde `503` con `CITA_NO_DISPONIBLE` y sin caché.
 
 > Pendiente: OpenAPI 3.1 en `/api/v1/openapi.json` + Swagger UI en `/api/v1/docs`.

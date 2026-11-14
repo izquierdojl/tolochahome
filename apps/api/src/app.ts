@@ -11,6 +11,8 @@ import { createBookmarksRouter, createImagenesRouter } from "./routes/bookmarks.
 import { createSearchRouter } from "./routes/search.js";
 import { createWeatherRouter } from "./routes/weather.js";
 import { createFeedsRouter } from "./routes/feeds.js";
+import { createCitaRouter } from "./routes/cita.js";
+import { crearServicioCita, type ServicioCita } from "./lib/cita.js";
 import { createSuggestRouter } from "./routes/suggest.js";
 import { createIntercambioRouter } from "./routes/intercambio.js";
 
@@ -28,7 +30,12 @@ function leerVersion(): string {
 /** Visible en `/acerca-de` y para comprobar despliegues. */
 export const VERSION_APP = leerVersion();
 
-export function createApp(db: Db, config: AppConfig): Express {
+/** Dependencias sustituibles (los tests inyectan una fuente de citas simulada). */
+export interface AppDeps {
+  servicioCita?: ServicioCita;
+}
+
+export function createApp(db: Db, config: AppConfig, deps: AppDeps = {}): Express {
   const app = express();
   // La app vive tras un proxy inverso (ver docs/despliegue.md).
   app.set("trust proxy", 1);
@@ -49,6 +56,7 @@ export function createApp(db: Db, config: AppConfig): Express {
   app.use("/api/v1/search-engines", createSearchRouter({ db, config }));
   app.use("/api/v1/weather-locations", createWeatherRouter({ db, config }));
   app.use("/api/v1/feeds", createFeedsRouter({ db, config }));
+  app.use("/api/v1/cita", createCitaRouter({ servicio: deps.servicioCita ?? crearServicioCita() }));
   app.use("/api/v1/sugerencias", createSuggestRouter({ db, config }));
   app.use("/api/v1", createIntercambioRouter({ db, config }));
 

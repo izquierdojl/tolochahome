@@ -1,0 +1,27 @@
+{{#switch: {{{año|{{CURRENTYEAR}} }}}
+| 2005=El año 2005 no fue bisiesto, por lo que este día no existió.
+| 2006=El año 2006 no fue bisiesto, por lo que este día no existió.
+| 2007=El año 2007 no fue bisiesto, por lo que este día no existió.
+| 2008={{CitaDía|Convertir la tregua en el objetivo es un [[error|'''error''']] de este tipo, porque no es la tregua, sino el cese definitivo de la violencia lo que debemos perseguir|Fernando Buesa|Fernando Buesa|[[Política|Político]] [[País Vasco|vasco]] [[España|español]], sobre la lucha contra ETA, que acabaría matándolo mediante una bomba el 22 de febrero de 2000).|Imagen=ETA Pasajes 2003 06 28.jpg}}
+| 2009=El año 2009 no fue bisiesto, por lo que este día no existió.
+| 2010=El año 2010 no fue bisiesto, por lo que este día no existió.
+| 2011=El año 2011 no fue bisiesto, por lo que este día no existió.
+| 2012={{CitaDía|Todos [[Trabajo|trabajamos]] por tres cosas: la [[fama]], el [[oro]] y el [[placer]]. Tengo fama, no necesito  oro, y los placeres de antaño me aburren...|Gioachino Rossini|Gioachino Rossini|[[Composición|Compositor]] [[italia]]no (nacido el 29 de febrero de 1792).|Imagen=Rossini 7.jpg}}
+| 2013=El año 2013 no es bisiesto, por lo que este día no existe.
+| #default=El año 2014 no es bisiesto, por lo que este día no existe.
+| 2015=El año 2015 no es bisiesto, por lo que este día no existe.
+| #default=El año 2013 no es bisiesto, por lo que este día no existe.
+| #default=El año 2014 no es bisiesto, por lo que este día no existe.
+| 2015=El año 2015 no es bisiesto, por lo que este día no existe.
+| 2015=El año 2013 no es bisiesto, por lo que este día no existe.
+| #default=El año 2014 no es bisiesto, por lo que este día no existe.
+| 2015=El año 2015 no es bisiesto, por lo que este día no existe.
+| #default=El año 2013 no es bisiesto, por lo que este día no existe.
+| #default=El año 2014 no es bisiesto, por lo que este día no existe.
+| 2015=El año 2015 no es bisiesto, por lo que este día no existe.
+| 2020={{CitaDía|Todos [[Trabajo|trabajamos]] por tres cosas: la [[fama]], el [[oro]] y el [[placer]]. Tengo fama, no necesito  oro, y los placeres de antaño me aburren...|Gioachino Rossini|Gioachino Rossini|[[Composición|Compositor]] [[italia]]no (nacido el 29 de febrero de 1792).|Imagen=Rossini 7.jpg}}
+| #default_old=  {{#ifexpr: {{{año|{{CURRENTYEAR}}}}}<{{CURRENTYEAR}} | No se definió cita del día para el 29 de febrero de {{{año|{{CURRENTYEAR}}}}}, o no se archivó. | {{#ifexpr: {{{año|{{CURRENTYEAR}}}}}0229>{{#expr:{{CURRENTYEAR}}{{CURRENTMONTH}}{{CURRENTDAY2}}+100}} | La cita del día para el 29 de febrero de {{{año|{{CURRENTYEAR}}}}} aún no está fijada. | <noinclude><div style="background:#ffdfcf"><center>'''Cita de reserva'''</center></div><br /></noinclude>{{CitaDía|¿Qué es poesía? —dices mientras clavas<br />en mi pupila tu pupila azul—;<br />¿qué es poesía? ¿Y tú me lo preguntas?<br />¡Poesía... eres tú!|Gustavo Adolfo Bécquer|Gustavo Adolfo Bécquer|[[Poesía|Poeta]] y narrador romántico [[España|español]] ([[Sevilla]], 17 de febrero de 1836 - [[Madrid]], 22 de diciembre de 1870).|Imagen=Blue eye.jpg}} }} }}
+}}<noinclude>
+{{Navegación frase del día}}
+{{Documentación}}
+</noinclude>
