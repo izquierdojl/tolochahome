@@ -7,6 +7,7 @@ import { loadEnv, type AppConfig } from "../src/config/env.js";
 import { createDb, closeDb, type Db } from "../src/db/client.js";
 import { runMigrations } from "../src/db/migrate.js";
 import { createApp } from "../src/app.js";
+import type { ServicioCita } from "../src/lib/cita.js";
 
 export interface TestContext {
   app: Express;
@@ -18,8 +19,17 @@ export interface TestContext {
 const ACCESS_SECRET = "test-access-secret-0123456789abcdef";
 const REFRESH_SECRET = "test-refresh-secret-0123456789abcdef";
 
-/** App aislada por test: BD temporal migrada + configuración de prueba. */
-export function createTestApp(overrides: Record<string, string | undefined> = {}): TestContext {
+/** Fuente de citas por defecto de los tests: nunca llega a Wikimedia. */
+const SERVICIO_CITA_VACIO: ServicioCita = { obtener: async () => null };
+
+/**
+ * App aislada por test: BD temporal migrada + configuración de prueba.
+ * `servicioCita` sustituye a la fuente real de es.wikiquote.
+ */
+export function createTestApp(
+  overrides: Record<string, string | undefined> = {},
+  servicioCita: ServicioCita = SERVICIO_CITA_VACIO,
+): TestContext {
   const dir = mkdtempSync(join(tmpdir(), "tolochahome-test-"));
   const dbPath = join(dir, "test.db");
   const config = loadEnv({
@@ -31,7 +41,7 @@ export function createTestApp(overrides: Record<string, string | undefined> = {}
   });
   runMigrations(dbPath);
   const db = createDb(dbPath);
-  const app = createApp(db, config);
+  const app = createApp(db, config, { servicioCita });
   return {
     app,
     db,
