@@ -29,11 +29,19 @@ fi
 
 id8="$(python3 scripts/spec_id.py)"
 # slug: minúsculas, sin acentos, espacios -> guiones, solo [a-z0-9-]
-slug="$(echo "$titulo" \
-  | iconv -f utf-8 -t ascii//TRANSLIT 2>/dev/null || echo "$titulo" \
-  | tr '[:upper:]' '[:lower:]' \
-  | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//' \
-  | cut -c1-48)"
+# Se hace en python3 (ya necesario para spec_id.py) para no depender de la
+# locale ni de que iconv soporte //TRANSLIT.
+slug="$(python3 - "$titulo" <<'PY'
+import re
+import sys
+import unicodedata
+
+texto = unicodedata.normalize("NFKD", sys.argv[1])
+texto = texto.encode("ascii", "ignore").decode("ascii").lower()
+slug = re.sub(r"[^a-z0-9]+", "-", texto).strip("-")[:48].strip("-")
+print(slug or "change")
+PY
+)"
 name="${tipo}-${id8}-${slug}"
 dir="openspec/changes/${name}"
 mkdir -p "$dir/specs"
