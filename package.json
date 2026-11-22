@@ -26,7 +26,8 @@
     "release:major": "node scripts/bump.js major"
   },
   "devDependencies": {
-    "concurrently": "^10.0.7"
+    "concurrently": "^10.0.7",
+    "vite": "^6.4.6"
   },
   "overrides": {
     "@esbuild-kit/core-utils": {

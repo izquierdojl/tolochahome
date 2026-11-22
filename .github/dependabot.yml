@@ -29,8 +29,8 @@ updates:
       - dependency-name: "vite"
         update-types:
           - version-update:semver-major
-      # @eslint/js debe ir a la par que eslint; se subirán juntos a la 10.
-      - dependency-name: "@eslint/js"
+      # La 6 solo funciona con Vite 8; se subirá junto con él.
+      - dependency-name: "@vitejs/plugin-react"
         update-types:
           - version-update:semver-major
     groups:

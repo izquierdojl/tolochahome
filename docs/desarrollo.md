@@ -86,8 +86,11 @@ Archivar = commitear TODO (código + specs) antes del merge; comprobar `git stat
 - **Auto-merge**: `dependabot-auto-merge` fusiona solo los PRs de Dependabot
   minor/patch cuando todos los checks están en verde. Los `major` se revisan a
   mano. `dependabot.yml` ignora las majors de `@types/node` (el runtime es Node
-  24), `typescript` (sin soporte en typescript-eslint 8.x), `vite` (exige
-  `@vitejs/plugin-react` 6) y `@eslint/js` (debe ir a la par que eslint 10).
+  24), `typescript` (sin soporte en typescript-eslint 8.x), `vite` (la 8 exige
+  `@vitejs/plugin-react` 6) y `@vitejs/plugin-react`.
+- **Vite** se declara también como devDependency del root para que npm lo
+  hoistee una sola vez. Si queda una copia anidada en `apps/web`, `tsc` falla
+  por dos identidades de tipos distintas.
 - **CI** ejecuta `npm audit --omit=dev --audit-level=high`: si aparece una
   vulnerabilidad alta o crítica en dependencias de producción, el pipeline
   falla y el release no publica hasta resolverla.
