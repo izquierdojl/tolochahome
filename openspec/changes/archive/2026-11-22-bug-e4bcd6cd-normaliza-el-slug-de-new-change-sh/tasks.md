@@ -1,0 +1,4 @@
+- [x] Calcular el slug con `python3` y quitar `iconv`
+- [x] Comprobar títulos con acentos, mayúsculas, símbolos y vacío
+- [x] `bash scripts/check_changes.sh` + `npm run verify`
+- [x] Archivar (commitear TODO y verificar `git status` limpio en lo tocado)
