@@ -1,0 +1,8 @@
+- [x] Anclar `vite` en el root y subir `apps/web` a 6.4.6
+- [x] Adoptar `vitest` 5.1.1 y `typescript-eslint` 8.73.0
+- [x] Adoptar `eslint` 10 + `@eslint/js` 10
+- [x] Adoptar `jose` 6 y `dotenv` 18.0.10
+- [x] Ajustar ignores (`@vitejs/plugin-react` major, quitar `@eslint/js`)
+- [x] Documentar el anclaje de Vite
+- [x] `npm run verify` + `npm audit`
+- [x] Archivar (commitear TODO y verificar `git status` limpio en lo tocado)

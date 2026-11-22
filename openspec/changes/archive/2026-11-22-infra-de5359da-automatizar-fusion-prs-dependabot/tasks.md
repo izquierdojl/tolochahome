@@ -1,0 +1,6 @@
+- [x] Crear el workflow `dependabot-auto-merge.yml`
+- [x] Añadir reglas `ignore` y limitar el grupo de Actions en `dependabot.yml`
+- [x] Alinear `@types/node` con Node 24 en API y web
+- [x] Documentar auto-merge e ignores en `docs/desarrollo.md`
+- [x] `npm run verify`
+- [x] Archivar (commitear TODO y verificar `git status` limpio en lo tocado)
