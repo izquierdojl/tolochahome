@@ -1,0 +1,71 @@
+name: Dependabot auto-merge
+
+# Se dispara con pull_request (patrón oficial de GitHub): Dependabot recibe un
+# GITHUB_TOKEN de solo lectura por defecto, pero el bloque `permissions` eleva
+# el permiso para poder fusionar. No se necesita ningún secreto.
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: dependabot-auto-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  auto-merge:
+    if: |
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event.pull_request.base.ref == 'dev' &&
+      github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Leer metadatos de la actualización
+        id: metadata
+        uses: dependabot/fetch-metadata@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Esperar al CI y fusionar
+        if: steps.metadata.outputs.update-type != 'version-update:semver-major'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          # Estado agregado de los checks. Se excluye el check de este propio
+          # workflow para no esperarnos a nosotros mismos.
+          estado() {
+            gh pr view "$PR_URL" --json statusCheckRollup --jq '
+              [(.statusCheckRollup // [])[]
+               | select(.workflowName != "Dependabot auto-merge")
+               | if .__typename == "CheckRun"
+                 then (if .status == "COMPLETED" then .conclusion else "PENDING" end)
+                 else .state end] as $checks
+              | if ($checks | length) == 0 then "sin-checks"
+                elif ([$checks[] | select(. == "PENDING" or . == "QUEUED" or . == "IN_PROGRESS" or . == "EXPECTED" or . == "WAITING")] | length) > 0 then "pendiente"
+                elif ([$checks[] | select(. != "SUCCESS" and . != "NEUTRAL" and . != "SKIPPED")] | length) > 0 then "fallido"
+                else "ok" end'
+          }
+
+          # Hasta 30 minutos (60 intentos x 30 s).
+          s=""
+          for _ in $(seq 1 60); do
+            s="$(estado)"
+            case "$s" in
+              ok) break ;;
+              fallido) echo "::error::El CI ha fallado; no se fusiona."; exit 1 ;;
+              *) sleep 30 ;;
+            esac
+          done
+          if [[ "$s" != "ok" ]]; then
+            echo "::error::Tiempo de espera agotado esperando al CI."
+            exit 1
+          fi
+
+          gh pr merge --squash --match-head-commit "$HEAD_SHA" "$PR_URL"
